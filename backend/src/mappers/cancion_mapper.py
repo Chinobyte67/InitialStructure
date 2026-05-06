@@ -1,7 +1,7 @@
 # TODO: implementar to_product_response(product: Product) -> ProductResponseDTO
 
-from backend.src.db.models.cancion_model import Cancion
-from src.dtos.product_dto import CancionResponseDTO 
+from ..db.models.cancion_model import Cancion
+from ..dtos.cancion_dto import CancionResponseDTO 
 
 def to_cancion_response(cancion: Cancion) -> CancionResponseDTO:
     return CancionResponseDTO(

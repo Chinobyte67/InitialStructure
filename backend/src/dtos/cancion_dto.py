@@ -1,5 +1,4 @@
-# TODO: definir CreateProductDTO y ProductResponseDTO
-
+from pydantic import BaseModel
 
 class CreateCancionDTO(BaseModel):
     titulo: str

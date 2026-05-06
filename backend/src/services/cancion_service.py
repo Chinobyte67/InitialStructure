@@ -1,7 +1,7 @@
 # TODO: implementar ProductService con la misma estructura que UserService
 
-from backend.src.dtos.cancion_dto import CreateCancionDTO, CancionResponseDTO
-from backend.src.repositories.cancion_repository import CancionRepository
+from ..dtos.cancion_dto import CreateCancionDTO, CancionResponseDTO
+from ..repositories.cancion_repository import CancionRepository
 
 class CancionService:
     def __init__(self):

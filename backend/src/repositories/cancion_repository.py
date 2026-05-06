@@ -1,9 +1,9 @@
 # TODO: implementar ProductRepository (create, find_by_id, list_all, update, delete)
 # Seguí el patrón de user_repository.py
 
-from backend.src.db.models.cancion_model import Cancion
-from backend.src.dtos.cancion_dto import CreateCancionDTO, CancionResponseDTO
-from backend.src.mappers.cancion_mapper import to_cancion_response      
+from ..db.models.cancion_model import Cancion
+from ..dtos.cancion_dto import CreateCancionDTO, CancionResponseDTO
+from ..mappers.cancion_mapper import to_cancion_response      
 
 class CancionRepository:   
     def create(self, cancion_dto: CreateCancionDTO) -> CancionResponseDTO:
