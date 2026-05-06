@@ -15,7 +15,7 @@ from src.db.connection import Base
 #id, titulo, duracion_seg, album_id
 
 class Cancion(Base):
-    __tablename__ = "canciones"
+    __tablename__ = "cancion"
 
     id = Column(Integer, primary_key=True)
     titulo = Column(String, unique=True, nullable=False)
