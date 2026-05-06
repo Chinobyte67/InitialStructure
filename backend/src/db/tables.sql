@@ -65,3 +65,13 @@ CREATE TABLE seguidores (
     artista_id INTEGER REFERENCES Artista(id) ON DELETE CASCADE,
     PRIMARY KEY (usuario_id, artista_id)
 );
+INSERT INTO Artista (nombre, pais, genero_musical) VALUES ('Bizarrap', 'Argentina', 'Trap');
+INSERT INTO Usuario (email, nombre, plan) VALUES ('elvis@example.com', 'Elvis', 'Premium');
+
+-- Insertar Álbum y Canción
+INSERT INTO Album (titulo, anio, artista_id) VALUES ('BZRP Music Sessions', 2023, 1);
+INSERT INTO Cancion (titulo, duracion_seg, album_id) VALUES ('Shakira Session #53', 213, 1);
+
+-- Crear una Playlist y agregar la canción
+INSERT INTO Playlist (nombre, usuario_id) VALUES ('Mis Favoritas 2024', 1);
+INSERT INTO playlist_canciones (playlist_id, cancion_id, orden) VALUES (1, 1, 1);
