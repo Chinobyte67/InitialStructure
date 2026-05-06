@@ -1,1 +1,12 @@
 # TODO: implementar to_product_response(product: Product) -> ProductResponseDTO
+
+from src.db.models.product_model import Cancion
+from src.dtos.product_dto import CancionResponseDTO 
+
+def to_cancion_response(cancion: Cancion) -> CancionResponseDTO:
+    return CancionResponseDTO(
+        id=cancion.id,
+        titulo=cancion.titulo,
+        duracion_seg=cancion.duracion_seg,
+        album_id=cancion.album_id
+    )
