@@ -42,3 +42,22 @@ def list_albums(db: Session = Depends(get_db)):
 def list_albums_by_artista(artista_id: int, db: Session = Depends(get_db)):
     return AlbumService(db).list_albums_by_artista(artista_id)
 
+@router.get("/genero/{genero_id}", response_model=list[AlbumResponseDTO])
+def list_albums_by_genero(genero_id: int, db: Session = Depends(get_db)):
+    return AlbumService(db).list_albums_by_genero(genero_id)
+
+@router.get("/anio/{anio}", response_model=list[AlbumResponseDTO])
+def list_albums_by_anio(anio: int, db: Session = Depends(get_db)):
+    return AlbumService(db).list_albums_by_anio(anio)
+
+@router.get("/titulo/{titulo}", response_model=list[AlbumResponseDTO])
+def list_albums_by_titulo(titulo: str, db: Session = Depends(get_db)):
+    return AlbumService(db).list_albums_by_titulo(titulo)
+
+@router.get("/duracion/{duracion}", response_model=list[AlbumResponseDTO])
+def list_albums_by_duracion(duracion: int, db: Session = Depends(get_db)):
+    return AlbumService(db).list_albums_by_duracion(duracion)
+
+@router.get("/cancion/{cancion_id}", response_model=list[AlbumResponseDTO])
+def list_albums_by_cancion(cancion_id: int, db: Session = Depends(get_db)):
+    return AlbumService(db).list_albums_by_cancion(cancion_id)

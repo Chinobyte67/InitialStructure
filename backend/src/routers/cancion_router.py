@@ -32,3 +32,28 @@ def update_cancion(cancion_id: int, payload: CreateCancionSchema, db: Session = 
 
 def delete_cancion(cancion_id: int, db: Session = Depends(get_db)):
     CancionService(db).delete(cancion_id)
+
+@router.get("/{cancion_id}", response_model=CancionResponseDTO)
+def get_cancion_endpoint(cancion_id: int, db: Session = Depends(get_db)):
+    cancion = get_cancion(cancion_id, db)
+    if not cancion:
+        return {"error": "Canción no encontrada"}
+    return cancion
+
+@router.get("/", response_model=list[CancionResponseDTO])
+def list_canciones_endpoint(db: Session = Depends(get_db)):
+    return list_canciones(db)
+
+@router.put("/{cancion_id}", response_model=CancionResponseDTO)
+def update_cancion_endpoint(cancion_id: int, payload: CreateCancionSchema, db: Session = Depends(get_db)):
+    cancion = get_cancion(cancion_id, db)
+    if not cancion:
+        return {"error": "Canción no encontrada"}
+    return update_cancion(cancion_id, payload, db)
+
+@router.delete("/{cancion_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_cancion_endpoint(cancion_id: int, db: Session = Depends(get_db)):
+    cancion = get_cancion(cancion_id, db)
+    if not cancion:
+        return {"error": "Canción no encontrada"}
+    delete_cancion(cancion_id, db)

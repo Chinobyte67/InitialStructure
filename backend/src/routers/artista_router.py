@@ -34,3 +34,46 @@ def delete_artista(artista_id: int, db: Session = Depends(get_db)):
     if not success:
         raise HTTPException(status_code=404, detail="Artista no encontrado")
     
+@router.get("/", response_model=list[ArtistaResponseDTO])
+def list_artistas(db: Session = Depends(get_db)):
+    return ArtistaService(db).list_artistas()
+
+@router.get("/nombre/{nombre}", response_model=list[ArtistaResponseDTO])
+def list_artistas_by_nombre(nombre: str, db: Session = Depends(get_db)):
+    return ArtistaService(db).list_artistas_by_nombre(nombre)
+
+@router.get("/pais/{pais}", response_model=list[ArtistaResponseDTO])
+def list_artistas_by_pais(pais: str, db: Session = Depends(get_db)):
+    return ArtistaService(db).list_artistas_by_pais(pais)
+
+@router.get("/genero/{genero}", response_model=list[ArtistaResponseDTO])
+def list_artistas_by_genero(genero: str, db: Session = Depends(get_db)):
+    return ArtistaService(db).list_artistas_by_genero(genero)
+
+@router.get("/anio/{anio}", response_model=list[ArtistaResponseDTO])
+def list_artistas_by_anio(anio: int, db: Session = Depends(get_db)):
+    return ArtistaService(db).list_artistas_by_anio(anio)
+
+@router.get("/albumes/{artista_id}", response_model=list[ArtistaResponseDTO])
+def list_artistas_with_albumes(artista_id: int, db: Session = Depends(get_db)):
+    return ArtistaService(db).list_artistas_with_albumes(artista_id)
+
+@router.get("/canciones/{artista_id}", response_model=list[ArtistaResponseDTO])
+def list_artistas_with_canciones(artista_id: int, db: Session = Depends(get_db)):
+    return ArtistaService(db).list_artistas_with_canciones(artista_id)
+
+@router.get("/playlist/{artista_id}", response_model=list[ArtistaResponseDTO])
+def list_artistas_with_playlist(artista_id: int, db: Session = Depends(get_db)):
+    return ArtistaService(db).list_artistas_with_playlist(artista_id)
+
+@router.get("/favoritos/{artista_id}", response_model=list[ArtistaResponseDTO])
+def list_artistas_with_favoritos(artista_id: int, db: Session = Depends(get_db)):
+    return ArtistaService(db).list_artistas_with_favoritos(artista_id)
+
+@router.get("/seguidores/{artista_id}", response_model=list[ArtistaResponseDTO])
+def list_artistas_with_seguidores(artista_id: int, db: Session = Depends(get_db)):
+    return ArtistaService(db).list_artistas_with_seguidores(artista_id)
+
+@router.get("/siguiendo/{artista_id}", response_model=list[ArtistaResponseDTO])
+def list_artistas_with_siguiendo(artista_id: int, db: Session = Depends(get_db)):
+    return ArtistaService(db).list_artistas_with_siguiendo(artista_id)
