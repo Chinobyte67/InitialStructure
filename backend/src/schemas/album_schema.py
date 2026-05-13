@@ -3,12 +3,12 @@
 
 from pydantic import BaseModel
 
-class CreateCancionSchema(BaseModel):
+class CreateAlbumSchema(BaseModel):
     titulo: str
     duracion_seg: int
     album_id: int
 
-class UpdateCancionSchema(BaseModel):
+class UpdateAlbumSchema(BaseModel):
     id: int
     titulo: str | None = None
     duracion_seg: int | None = None

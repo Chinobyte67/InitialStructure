@@ -19,3 +19,16 @@ router = APIRouter(prefix="/canciones", tags=["canciones"])
 def create_cancion(payload: CreateCancionSchema, db: Session = Depends(get_db)):
     dto = CreateCancionDTO(**payload.model_dump())
     return CancionService(db).create(dto)
+
+def get_cancion(cancion_id: int, db: Session = Depends(get_db)):
+    return CancionService(db).get_by_id(cancion_id)
+
+def list_canciones(db: Session = Depends(get_db)):
+    return CancionService(db).list_all()
+
+def update_cancion(cancion_id: int, payload: CreateCancionSchema, db: Session = Depends(get_db)):
+    dto = CreateCancionDTO(**payload.model_dump())
+    return CancionService(db).update(cancion_id, dto)
+
+def delete_cancion(cancion_id: int, db: Session = Depends(get_db)):
+    CancionService(db).delete(cancion_id)
