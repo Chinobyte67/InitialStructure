@@ -14,4 +14,3 @@ class UpdateCancionSchema(BaseModel):
     id: int
     titulo: str | None = None  
     duracion_seg: int | None = None
-    album_id: int | None = None
