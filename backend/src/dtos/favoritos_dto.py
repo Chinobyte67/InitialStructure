@@ -7,6 +7,6 @@ class FavoritosResponseDTO(BaseModel):
     usuario_id: int
     cancion_id: int
 
-class createFavoritosDTO(BaseModel):
+class CreateFavoritosDTO(BaseModel):
     usuario_id: int
     cancion_id: int

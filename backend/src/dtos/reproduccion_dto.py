@@ -8,7 +8,7 @@ class ReproduccionResponseDTO(BaseModel):
     fecha: str
     segundos_escuchados: int
 
-class createReproduccionDTO(BaseModel):
+class CreateReproduccionDTO(BaseModel):
     usuario_id: int
     cancion_id: int
     fecha: str

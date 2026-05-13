@@ -1,6 +1,6 @@
 from ..db.models.playlist_canciones_model import PlaylistCanciones
 from ..dtos.playlist_canciones_dto import CreatePlaylistCancionesDTO
-from ..mappers.playlist_canciones_mapper import to_playlist_canciones_response
+from ..mappers.playlist_canciones import to_playlist_canciones_response
 
 class PlaylistCancionesRepository:
     def create(self, playlist_canciones_dto: CreatePlaylistCancionesDTO):
