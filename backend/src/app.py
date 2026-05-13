@@ -1,7 +1,8 @@
+from backend.src.routers import album_router, artista_router
 from fastapi import FastAPI
 
 from src.middlewares.error_middleware import app_error_handler
-from src.routers import auth_router, user_router, cancion_router
+from src.routers import auth_router, user_router, cancion_router, album_router, artista_router
 from src.utils.errors import AppError
 
 app = FastAPI(title="Initial Structure API")
@@ -13,8 +14,8 @@ app.include_router(auth_router.router, prefix="/api")
 # TODO: registrar product_router cuando se implemente
 # app.include_router(product_router.router, prefix="/api")
 app.include_router(cancion_router.router, prefix="/api")
-
-
+app.include_router(album_router.router, prefix="/api")
+app.include_router(artista_router.router, prefix="/api")
 
 @app.get("/health")
 def health():
