@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from src.middlewares.error_middleware import app_error_handler
-from src.routers import auth_router, user_router, cancion_router, album_router, artista_router, favoritos_router, playlist_canciones_router, playlist_router, reproduccion_router
+from src.routers import auth_router, user_router, cancion_router, album_router, artista_router, favoritos_router, playlist_canciones_router, playlist_router, reproduccion_router, seguidores_router
 from src.utils.errors import AppError
 
 app = FastAPI(title="Initial Structure API")
@@ -19,7 +19,7 @@ app.include_router(favoritos_router.router, prefix="/api")
 app.include_router(playlist_canciones_router.router, prefix="/api")
 app.include_router(playlist_router.router, prefix="/api")
 app.include_router(reproduccion_router.router, prefix="/api")
-
+app.include_router(seguidores_router.router, prefix="/api")
 
 @app.get("/health")
 def health():
