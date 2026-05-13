@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "start": "python -m src.main",
+    "dev": "python -m src.main"
+  }
+}

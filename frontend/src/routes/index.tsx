@@ -15,13 +15,7 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-function greeting() {
-  const h = new Date().getHours();
-  if (h < 6) return "Buenas noches";
-  if (h < 13) return "Buenos días";
-  if (h < 20) return "Buenas tardes";
-  return "Buenas noches";
-}
+// removed greeting function as it's no longer used
 
 function Index() {
   const user = useApp((s) => s.user);
@@ -48,7 +42,7 @@ function Index() {
     <div className="px-8 pt-8 pb-12 max-w-[1400px]">
       <div className="mb-10">
         <h1 className="text-4xl font-semibold tracking-tight">
-          {greeting()}, {user.nombre}
+          Bienvenido, {user.nombre}
         </h1>
         <p className="text-muted-foreground mt-1">
           {playlists.length} playlists · {reps.length} reproducciones registradas
