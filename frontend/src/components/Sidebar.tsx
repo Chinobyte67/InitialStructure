@@ -9,10 +9,13 @@ import {
   Disc3,
   Sparkles,
   CalendarHeart,
+  LogIn,
+  LogOut,
 } from "lucide-react";
 import { useApp } from "@/store/app";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useSession } from "@/store/session";
 
 const mainNav = [
   { to: "/", label: "Inicio", icon: Home },
@@ -35,6 +38,9 @@ export function Sidebar() {
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const sessionUser = useSession((s) => s.user);
+  const setUser = useSession((s) => s.setUser);
+  const authedEmail = sessionUser?.email ?? null;
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,6 +167,26 @@ export function Sidebar() {
             <p className="px-3 text-xs text-muted-foreground">Aún no tenés playlists.</p>
           )}
         </div>
+      </div>
+
+      <div className="px-3 py-3 border-t border-sidebar-border text-sm">
+        {authedEmail ? (
+          <button
+            onClick={() => { setUser(null); navigate({ to: "/auth" }); }}
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50"
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="truncate">Cerrar sesión</span>
+          </button>
+        ) : (
+          <Link to="/auth" className="flex items-center gap-2 px-3 py-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50">
+            <LogIn className="w-4 h-4" />
+            Iniciar sesión
+          </Link>
+        )}
+        {authedEmail && (
+          <p className="px-3 pt-1 text-[10px] text-muted-foreground truncate">{authedEmail}</p>
+        )}
       </div>
     </aside>
   );
