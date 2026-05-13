@@ -1,4 +1,4 @@
-from pydanic import BaseModel
+from pydantic import BaseModel
 
 class CreateFavoritosSchema(BaseModel):
     usuario_id: int
