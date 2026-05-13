@@ -1,13 +1,13 @@
 from ..db.models.artista_model import Artista
-from ..dtos.artista_dto import ArtistaResponseDTO
+from ..dtos.artista_dto import ArtistaResponseDTO, CreateArtistaDTO
 from ..mappers.artista_mapper import to_artista_response
 
 class ArtistaRepository:
-    def create(self, nombre: str, pais: str, genero_musical: str) -> ArtistaResponseDTO:
+    def create(self, create_artista_dto: CreateArtistaDTO) -> ArtistaResponseDTO:
         artista = Artista(
-            nombre=nombre,
-            pais=pais,
-            genero_musical=genero_musical
+            nombre=create_artista_dto.nombre,
+            pais=create_artista_dto.pais,
+            genero_musical=create_artista_dto.genero
         )
         artista.save()
         return to_artista_response(artista)

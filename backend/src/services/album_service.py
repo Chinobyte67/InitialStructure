@@ -1,11 +1,11 @@
-from ..dtos.album_dto import AlbumCreateDTO, AlbumResponseDTO
+from ..dtos.album_dto import CreateAlbumDTO, AlbumResponseDTO
 from ..repositories.album_repository import AlbumRepository
 
 class AlbumService:
     def __init__(self):
         self.album_repo = AlbumRepository()
 
-    def create_album(self, album_dto: AlbumCreateDTO) -> AlbumResponseDTO:
+    def create_album(self, album_dto: CreateAlbumDTO) -> AlbumResponseDTO:
         return self.album_repo.create(album_dto)
 
     def get_album_by_id(self, album_id: int) -> AlbumResponseDTO:
@@ -14,7 +14,7 @@ class AlbumService:
     def list_all_albums(self) -> list[AlbumResponseDTO]:
         return self.album_repo.list_all()
 
-    def update_album(self, album_id: int, album_dto: AlbumCreateDTO) -> AlbumResponseDTO:
+    def update_album(self, album_id: int, album_dto: CreateAlbumDTO) -> AlbumResponseDTO:
         return self.album_repo.update(album_id, album_dto)
 
     def delete_album(self, album_id: int) -> bool:

@@ -1,4 +1,4 @@
-from ..dtos.artista_dto import CreateArtistaDTO, UpdateArtistaDTO
+from ..dtos.artista_dto import CreateArtistaDTO, ArtistaResponseDTO
 from ..repositories.artista_repository import ArtistaRepository
 
 class ArtistaService:
@@ -11,8 +11,8 @@ class ArtistaService:
     def get_artista_by_id(self, artista_id: int):
         return self.artista_repository.get_by_id(artista_id)
 
-    def update_artista(self, update_artista_dto: UpdateArtistaDTO):
-        return self.artista_repository.update(update_artista_dto)
+    def update_artista(self, artista_id: int, update_artista_dto: ArtistaResponseDTO):
+        return self.artista_repository.update(artista_id, update_artista_dto)
 
     def delete_artista(self, artista_id: int):
         return self.artista_repository.delete(artista_id)

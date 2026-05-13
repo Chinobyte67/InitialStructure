@@ -5,7 +5,7 @@ class CreateArtistaDTO(BaseModel):
     pais: str
     genero: str
 
-class UpdateArtistaDTO(BaseModel):
+class ArtistaResponseDTO(BaseModel):
     id: int
     nombre: str
     pais: str
