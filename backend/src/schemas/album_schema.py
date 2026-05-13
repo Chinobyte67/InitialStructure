@@ -9,9 +9,7 @@ class CreateCancionSchema(BaseModel):
     album_id: int
 
 class UpdateCancionSchema(BaseModel):
-    # TODO: completar con los campos opcionales que se permiten actualizar.
-    # Tip: todos los campos van como Optional / con default None.
     id: int
-    titulo: str | None = None  
+    titulo: str | None = None
     duracion_seg: int | None = None
     album_id: int | None = None
