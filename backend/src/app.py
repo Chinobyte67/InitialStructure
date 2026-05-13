@@ -1,4 +1,3 @@
-from backend.src.routers import album_router, artista_router
 from fastapi import FastAPI
 
 from src.middlewares.error_middleware import app_error_handler
