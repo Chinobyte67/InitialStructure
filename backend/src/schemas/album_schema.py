@@ -1,15 +1,11 @@
-# TODO: definir CreateProductSchema y UpdateProductSchema con Pydantic
-# Seguí el patrón de user_schema.py
-
 from pydantic import BaseModel
 
 class CreateAlbumSchema(BaseModel):
     titulo: str
-    duracion_seg: int
-    album_id: int
+    anio: int
+    artista_id: int
 
 class UpdateAlbumSchema(BaseModel):
-    id: int
     titulo: str | None = None
-    duracion_seg: int | None = None
-    album_id: int | None = None
+    anio: int | None = None
+    artista_id: int | None = None

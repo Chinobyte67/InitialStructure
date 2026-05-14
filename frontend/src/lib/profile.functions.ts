@@ -1,22 +1,75 @@
-import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { API_URL, UserResponse, Token } from "@/lib/api";
 
-export const obtenerPerfil = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
-      .from("profiles").select("id, email, nombre, plan, fecha_registro")
-      .eq("id", context.userId).maybeSingle();
-    if (error) throw new Error(error.message);
-    return data;
+// Obtener el token del localStorage
+const getAuthToken = (): string | null => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("auth_token");
+};
+
+const getHeaders = (includeAuth = true) => {
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+  if (includeAuth) {
+    const token = getAuthToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return headers;
+};
+
+// Obtener perfil del usuario actual
+export async function obtenerPerfil(userId: number): Promise<UserResponse> {
+  const url = `${API_URL}/api/users/${userId}`;
+  const response = await fetch(url, {
+    method: "GET",
+    headers: getHeaders(true),
   });
 
-export const actualizarPlan = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({ plan: z.enum(["free", "premium", "familiar"]) }).parse(i))
-  .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("profiles").update({ plan: data.plan }).eq("id", context.userId);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+  if (!response.ok) {
+    throw new Error(`Error fetching profile: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+// Actualizar datos del usuario
+export async function actualizarPerfil(
+  userId: number,
+  data: { email?: string; age?: number }
+): Promise<UserResponse> {
+  const url = `${API_URL}/api/users/${userId}`;
+  const response = await fetch(url, {
+    method: "PUT",
+    headers: getHeaders(true),
+    body: JSON.stringify(data),
   });
+
+  if (!response.ok) {
+    throw new Error(`Error updating profile: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+// Login
+export async function login(email: string, password: string): Promise<Token> {
+  const url = `${API_URL}/api/auth/login`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: getHeaders(false),
+    body: JSON.stringify({ email, password }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error logging in: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  // Guardar el token en localStorage
+  if (typeof window !== "undefined" && data.access_token) {
+    localStorage.setItem("auth_token", data.access_token);
+  }
+  return data;
+}

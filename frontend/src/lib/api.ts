@@ -4,7 +4,7 @@
 // Para apuntar a otro host, definir VITE_API_URL en .env.local.
 
 export const API_URL =
-  (import.meta.env.VITE_API_URL as string | undefined) ?? "http://localhost:8000";
+  (import.meta.env.VITE_API_URL as string | undefined) ?? "http://localhost:8000/api";
 
 type Query = Record<string, string | number | boolean | undefined | null>;
 
@@ -68,179 +68,101 @@ const del = <T>(path: string, body?: unknown) =>
   request<T>("DELETE", path, body !== undefined ? { body } : {});
 
 // =====================================================================
-// Tipos (DTOs esperados desde el backend)
+// Tipos (DTOs del backend FastAPI)
 // =====================================================================
-export type Plan = "free" | "premium" | "familiar";
-
-export interface Usuario {
-  id: string;
+export interface UserResponse {
+  id: number;
   email: string;
-  nombre: string;
-  plan: Plan;
-  fecha_registro: string;
+  age: number;
+  created_at: string;
+}
+
+export interface Token {
+  access_token: string;
+  token_type: string;
 }
 
 export interface Artista {
-  id: string;
+  id: number;
   nombre: string;
   pais: string;
   genero_musical: string;
 }
 
 export interface Album {
-  id: string;
+  id: number;
   titulo: string;
-  anio: number;
-  artista_id: string;
-  artista?: Artista;
+  anio?: number;
+  artista_id: number;
 }
 
 export interface Cancion {
-  id: string;
+  id: number;
   titulo: string;
   duracion_seg: number;
-  album_id: string;
-  album?: Album;
+  album_id: number;
 }
 
 export interface Playlist {
-  id: string;
+  id: number;
   nombre: string;
-  usuario_id: string;
-  es_publica: boolean;
-  colaborativa: boolean;
+  usuario_id: number;
   fecha_creacion: string;
+  es_publica: boolean;
 }
 
-export interface PlaylistDetalle extends Playlist {
-  canciones: Cancion[];
-  total_seg: number;
-  colaboradores: string[];
-}
-
-export interface ResultadoBusqueda {
-  artistas: Artista[];
-  albumes: Album[];
-  canciones: Cancion[];
-}
-
-export interface EstadisticaCancion {
-  reproducciones: number;
-  reproducciones_validas: number;
-  porcentaje_promedio_escuchado: number;
-}
-
-export interface TopCancion {
-  cancion: Cancion;
-  reproducciones: number;
-}
-
-export interface WrappedAnual {
-  anio: number;
-  total_reproducciones: number;
-  minutos_escuchados: number;
-  top_canciones: TopCancion[];
-  top_artistas: { artista: Artista; reproducciones: number }[];
-  generos: { genero: string; reproducciones: number }[];
+export interface Reproduccion {
+  id: number;
+  usuario_id: number;
+  cancion_id: number;
+  fecha: string;
+  segundos_escuchados: number;
 }
 
 // =====================================================================
-// Endpoints — un método por HU
+// Endpoints — adaptados al backend FastAPI actual
 // =====================================================================
 export const api = {
-  // HU1 — Registro / consulta de usuarios
-  usuarios: {
-    crear: (data: { email: string; nombre: string; plan: Plan; password?: string }) =>
-      post<Usuario>("/usuarios", data),
-    obtener: (id: string) => get<Usuario>(`/usuarios/${id}`),
-    listar: () => get<Usuario[]>("/usuarios"),
+  // Autenticación
+  auth: {
+    login: (data: { email: string; password: string }) =>
+      post<Token>("/auth/login", data),
   },
 
-  // HU2 — Catálogo (alta admin)
+  // Usuarios
+  usuarios: {
+    crear: (data: { email: string; password: string; age: number }) =>
+      post<UserResponse>("/users", data),
+    obtener: (id: number) => get<UserResponse>(`/users/${id}`),
+    listar: () => get<UserResponse[]>("/users"),
+    actualizar: (id: number, data: Partial<{ email: string; age: number }>) =>
+      put<UserResponse>(`/users/${id}`, data),
+    eliminar: (id: number) => del<{ ok: true }>(`/users/${id}`),
+  },
+
+  // Artistas (si están implementados)
   artistas: {
     listar: () => get<Artista[]>("/artistas"),
-    obtener: (id: string) => get<Artista & { albumes: Album[] }>(`/artistas/${id}`),
+    obtener: (id: number) => get<Artista>(`/artistas/${id}`),
     crear: (data: Omit<Artista, "id">) => post<Artista>("/artistas", data),
   },
+
+  // Álbumes
   albumes: {
-    listar: (query?: { artista_id?: string }) => get<Album[]>("/albumes", query),
-    obtener: (id: string) => get<Album & { canciones: Cancion[] }>(`/albumes/${id}`),
-    crear: (data: Omit<Album, "id" | "artista">) => post<Album>("/albumes", data),
+    listar: (query?: { artista_id?: number }) => get<Album[]>("/albums", query),
+    obtener: (id: number) => get<Album>(`/albums/${id}`),
+    crear: (data: Omit<Album, "id" | "artista">) => post<Album>("/albums", data),
   },
+
+  // Canciones
   canciones: {
-    listar: (query?: { album_id?: string }) => get<Cancion[]>("/canciones", query),
-    obtener: (id: string) => get<Cancion>(`/canciones/${id}`),
+    listar: (query?: { album_id?: number }) => get<Cancion[]>("/canciones", query),
+    obtener: (id: number) => get<Cancion>(`/canciones/${id}`),
     crear: (data: Omit<Cancion, "id" | "album">) => post<Cancion>("/canciones", data),
-    // HU14 — estadísticas por canción
-    estadisticas: (id: string, query?: { desde?: string; hasta?: string }) =>
-      get<EstadisticaCancion>(`/canciones/${id}/estadisticas`, query),
+    actualizar: (id: number, data: Partial<Omit<Cancion, "id" | "album">>) =>
+      put<Cancion>(`/canciones/${id}`, data),
+    eliminar: (id: number) => del<{ ok: true }>(`/canciones/${id}`),
   },
-
-  // HU3, HU4, HU10, HU11 — Playlists
-  playlists: {
-    listar: (query?: { usuario_id?: string; publicas?: boolean }) =>
-      get<Playlist[]>("/playlists", query),
-    obtener: (id: string) => get<PlaylistDetalle>(`/playlists/${id}`),
-    crear: (data: { nombre: string; usuario_id: string; es_publica?: boolean; colaborativa?: boolean }) =>
-      post<Playlist>("/playlists", data),
-    actualizar: (id: string, data: Partial<Pick<Playlist, "nombre" | "es_publica" | "colaborativa">>) =>
-      put<Playlist>(`/playlists/${id}`, data),
-    eliminar: (id: string) => del<{ ok: true }>(`/playlists/${id}`),
-    agregarCancion: (id: string, cancion_id: string) =>
-      post<{ ok: true }>(`/playlists/${id}/canciones`, { cancion_id }),
-    quitarCancion: (id: string, cancion_id: string) =>
-      del<{ ok: true }>(`/playlists/${id}/canciones/${cancion_id}`),
-    // HU11 — colaboradores
-    agregarColaborador: (id: string, usuario_id: string) =>
-      post<{ ok: true }>(`/playlists/${id}/colaboradores`, { usuario_id }),
-    quitarColaborador: (id: string, usuario_id: string) =>
-      del<{ ok: true }>(`/playlists/${id}/colaboradores/${usuario_id}`),
-  },
-
-  // HU5 — Favoritos
-  favoritos: {
-    listar: (usuario_id: string) => get<Cancion[]>(`/usuarios/${usuario_id}/favoritos`),
-    agregar: (usuario_id: string, cancion_id: string) =>
-      post<{ ok: true }>(`/usuarios/${usuario_id}/favoritos`, { cancion_id }),
-    quitar: (usuario_id: string, cancion_id: string) =>
-      del<{ ok: true }>(`/usuarios/${usuario_id}/favoritos/${cancion_id}`),
-  },
-
-  // HU6 — Seguir artistas
-  seguidos: {
-    listar: (usuario_id: string) => get<Artista[]>(`/usuarios/${usuario_id}/seguidos`),
-    seguir: (usuario_id: string, artista_id: string) =>
-      post<{ ok: true }>(`/usuarios/${usuario_id}/seguidos`, { artista_id }),
-    dejarDeSeguir: (usuario_id: string, artista_id: string) =>
-      del<{ ok: true }>(`/usuarios/${usuario_id}/seguidos/${artista_id}`),
-  },
-
-  // HU7 — Reproducciones (regla de validez 30%)
-  reproducciones: {
-    registrar: (data: {
-      usuario_id: string;
-      cancion_id: string;
-      segundos_escuchados: number;
-      fecha?: string;
-    }) => post<{ id: string; valida: boolean }>("/reproducciones", data),
-  },
-
-  // HU8 — Búsqueda parcial case-insensitive
-  buscar: (q: string) => get<ResultadoBusqueda>("/buscar", { q }),
-
-  // HU9 — Top canciones por usuario
-  top: {
-    canciones: (usuario_id: string, query?: { limit?: number; desde?: string; hasta?: string }) =>
-      get<TopCancion[]>(`/usuarios/${usuario_id}/top-canciones`, query),
-  },
-
-  // HU12 — Recomendaciones por género
-  recomendaciones: (usuario_id: string, query?: { limit?: number }) =>
-    get<Cancion[]>(`/usuarios/${usuario_id}/recomendaciones`, query),
-
-  // HU13 — Wrapped anual
-  wrapped: (usuario_id: string, anio: number) =>
-    get<WrappedAnual>(`/usuarios/${usuario_id}/wrapped/${anio}`),
 };
 
 export { ApiError };

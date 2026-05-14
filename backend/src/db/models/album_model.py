@@ -10,4 +10,4 @@ class Album(Base):
     id = Column(Integer, primary_key=True, index=True)
     titulo = Column(String, index=True)
     anio = Column(Numeric, index=True)
-    artista_id = Column(String, index=True)
+    artista_id = Column(Integer, index=True)

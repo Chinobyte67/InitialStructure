@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Search } from "lucide-react";
-import { artistas, albumes, canciones, getArtistaDeCancion, getAlbum } from "@/data/catalog";
+import { api, Artista, Album, Cancion } from "@/lib/api";
 import { CoverArt } from "@/components/CoverArt";
 import { SongRow } from "@/components/SongRow";
 
@@ -10,18 +10,50 @@ export const Route = createFileRoute("/buscar")({
   head: () => ({ meta: [{ title: "Buscar — AuraStream" }] }),
 });
 
+const getColor = (id: number): [string, string] => {
+  const colors = [
+    ["oklch(0.55 0.22 290)", "oklch(0.30 0.10 240)"] as [string, string],
+    ["oklch(0.50 0.18 30)", "oklch(0.25 0.08 20)"] as [string, string],
+    ["oklch(0.65 0.20 340)", "oklch(0.30 0.12 320)"] as [string, string],
+  ];
+  return colors[id % colors.length];
+};
+
 function BuscarPage() {
   const [q, setQ] = useState("");
+  const [allData, setAllData] = useState<{ canciones: Cancion[]; artistas: Artista[]; albumes: Album[] }>({
+    canciones: [],
+    artistas: [],
+    albumes: [],
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [cans, arts, albs] = await Promise.all([
+          api.canciones.listar(),
+          api.artistas.listar(),
+          api.albumes.listar(),
+        ]);
+        setAllData({ canciones: cans, artistas: arts, albumes: albs });
+      } catch (err) {
+        console.error("Error loading data:", err);
+      }
+    };
+    fetchData();
+  }, []);
 
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
     if (!term) return null;
     return {
-      canciones: canciones.filter((c) => c.titulo.toLowerCase().includes(term)).slice(0, 20),
-      artistas: artistas.filter((a) => a.nombre.toLowerCase().includes(term)),
-      albumes: albumes.filter((a) => a.titulo.toLowerCase().includes(term)),
+      canciones: allData.canciones
+        .filter((c) => c.titulo.toLowerCase().includes(term))
+        .slice(0, 20),
+      artistas: allData.artistas.filter((a) => a.nombre.toLowerCase().includes(term)),
+      albumes: allData.albumes.filter((a) => a.titulo.toLowerCase().includes(term)),
     };
-  }, [q]);
+  }, [q, allData]);
 
   return (
     <div className="px-8 pt-8 pb-12 max-w-[1400px]">
@@ -56,10 +88,10 @@ function BuscarPage() {
                   <Link
                     key={a.id}
                     to="/artista/$id"
-                    params={{ id: a.id }}
+                    params={{ id: String(a.id) }}
                     className="flex flex-col items-center w-32 shrink-0"
                   >
-                    <CoverArt colors={a.color} rounded="rounded-full" className="w-28 h-28 mb-2" />
+                    <CoverArt colors={getColor(a.id)} rounded="rounded-full" className="w-28 h-28 mb-2" />
                     <div className="text-sm font-medium truncate w-full text-center">{a.nombre}</div>
                     <div className="text-xs text-muted-foreground">{a.genero_musical}</div>
                   </Link>
@@ -77,15 +109,15 @@ function BuscarPage() {
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {results.albumes.map((al) => {
-                  const a = artistas.find((x) => x.id === al.artista_id);
+                  const a = allData.artistas.find((x) => x.id === al.artista_id);
                   return (
                     <Link
                       key={al.id}
                       to="/album/$id"
-                      params={{ id: al.id }}
+                      params={{ id: String(al.id) }}
                       className="bg-card rounded-lg p-3 shadow-emboss hover:shadow-emboss-lg"
                     >
-                      <CoverArt colors={al.color} className="mb-3" />
+                      <CoverArt colors={getColor(al.id)} className="mb-3" />
                       <div className="text-sm font-medium truncate">{al.titulo}</div>
                       <div className="text-xs text-muted-foreground truncate">{a?.nombre}</div>
                     </Link>
@@ -111,9 +143,6 @@ function BuscarPage() {
           </section>
         </div>
       )}
-
-      {/* Avoid unused warnings for getArtistaDeCancion / getAlbum if tree-shaken */}
-      <span className="hidden">{!!getArtistaDeCancion && !!getAlbum}</span>
     </div>
   );
 }
