@@ -1,12 +1,12 @@
 #(usuario_id, artista_id)
 
-from ..db.models.seguidores_model import Seguidores
+from pydantic import BaseModel
 
-class SeguidoresResponseDTO:
+class SeguidoresResponseDTO(BaseModel):
     id: int
     usuario_id: int
     artista_id: int
 
-class CreateSeguidoresDTO:
+class CreateSeguidoresDTO(BaseModel):
     usuario_id: int
     artista_id: int

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from src.db.connection import get_db
 from src.dtos.seguidores_dto import SeguidoresResponseDTO
 from src.services.seguidores_services import SeguidoresController
-from src.schemas.seguidores_schema import CreateSeguidorSchema
+from src.schemas.seguidores_schema import CreateSeguidoresSchema
 
 router = APIRouter(prefix="/seguidores", tags=["seguidores"])
 
@@ -17,6 +17,6 @@ def list_seguidores(db: Session = Depends(get_db)):
     return SeguidoresController().list_all_seguidores()
 
 @router.post("/", response_model=SeguidoresResponseDTO)
-def create_seguidor(seguidor: CreateSeguidorSchema, db: Session = Depends(get_db)):
+def create_seguidor(seguidor: CreateSeguidoresSchema, db: Session = Depends(get_db)):
     return SeguidoresController().create_seguidor(seguidor)
 

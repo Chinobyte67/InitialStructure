@@ -6,12 +6,14 @@ class CreateUserDTO(BaseModel):
     email: str
     password: str
     age: int
+    plan: str = "free"
 
 
 class UserResponseDTO(BaseModel):
     id: int
     email: str
     age: int
+    plan: str
     created_at: datetime
 
     model_config = {"from_attributes": True}

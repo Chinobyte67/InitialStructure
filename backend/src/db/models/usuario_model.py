@@ -13,3 +13,4 @@ class User(Base):
     age = Column(Integer, nullable=False)
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, server_default=func.now())
+    plan = Column(String, default="free")

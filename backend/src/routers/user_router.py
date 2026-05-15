@@ -34,3 +34,14 @@ def update_user(user_id: int, payload: UpdateUserSchema, db: Session = Depends(g
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(user_id: int, db: Session = Depends(get_db)):
     UserService(db).delete(user_id)
+
+@router.post("/seed", status_code=status.HTTP_201_CREATED)
+def seed_users(db: Session = Depends(get_db)):
+    """Endpoint para crear usuarios de prueba."""
+    service = UserService(db)
+    users_to_create = [
+        CreateUserDTO(email="user1@example.com", password="password1", age=25, plan="premium"),
+        CreateUserDTO(email="user2@example.com", password="password2", age=30, plan="free"),
+    ]
+    for dto in users_to_create:
+        service.create(dto)
