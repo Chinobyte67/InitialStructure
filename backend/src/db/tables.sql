@@ -2,9 +2,11 @@
 CREATE TABLE Usuario (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
-    nombre VARCHAR(100),
-    fecha_registro DATE DEFAULT CURRENT_DATE,
-    plan VARCHAR(50) -- ej: 'Gratis', 'Premium'
+    password_hash VARCHAR(255) NOT NULL,
+    age INTEGER NOT NULL,
+    is_admin BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    plan VARCHAR(50) DEFAULT 'free'
 );
 
 CREATE TABLE Artista (
@@ -32,8 +34,8 @@ CREATE TABLE Playlist (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     usuario_id INTEGER REFERENCES Usuario(id) ON DELETE CASCADE,
-    fecha_creacion DATE DEFAULT CURRENT_DATE,
-    es_publica BOOLEAN DEFAULT TRUE
+    fecha_creacion VARCHAR(255) NOT NULL,
+    es_publica INTEGER NOT NULL
 );
 
 --- Tablas de Actividad ---
@@ -47,26 +49,26 @@ CREATE TABLE Reproduccion (
 
 --- Tablas de Relación N a M ---
 CREATE TABLE playlist_canciones (
+    id SERIAL PRIMARY KEY,
     playlist_id INTEGER REFERENCES Playlist(id) ON DELETE CASCADE,
     cancion_id INTEGER REFERENCES Cancion(id) ON DELETE CASCADE,
-    orden INTEGER,
-    fecha_agregada TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (playlist_id, cancion_id)
+    orden INTEGER NOT NULL,
+    fecha_agregada VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE favoritos (
+    id SERIAL PRIMARY KEY,
     usuario_id INTEGER REFERENCES Usuario(id) ON DELETE CASCADE,
-    cancion_id INTEGER REFERENCES Cancion(id) ON DELETE CASCADE,
-    PRIMARY KEY (usuario_id, cancion_id)
+    cancion_id INTEGER REFERENCES Cancion(id) ON DELETE CASCADE
 );
 
 CREATE TABLE seguidores (
+    id SERIAL PRIMARY KEY,
     usuario_id INTEGER REFERENCES Usuario(id) ON DELETE CASCADE,
-    artista_id INTEGER REFERENCES Artista(id) ON DELETE CASCADE,
-    PRIMARY KEY (usuario_id, artista_id)
+    artista_id INTEGER REFERENCES Artista(id) ON DELETE CASCADE
 );
 INSERT INTO Artista (nombre, pais, genero_musical) VALUES ('Bizarrap', 'Argentina', 'Trap');
-INSERT INTO Usuario (email, nombre, plan) VALUES ('elvis@example.com', 'Elvis', 'Premium');
+INSERT INTO Usuario (email, password_hash, age, plan) VALUES ('elvis@example.com', '$2b$12$abcdefghijklmnopqrstuvwxYZ0123456789abcdefghi', 30, 'Premium');
 
 -- Insertar Álbum y Canción
 INSERT INTO Album (titulo, anio, artista_id) VALUES ('BZRP Music Sessions', 2023, 1);
