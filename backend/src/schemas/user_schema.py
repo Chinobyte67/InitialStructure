@@ -1,11 +1,32 @@
-from pydantic import BaseModel, EmailStr, Field, constr
+from pydantic import BaseModel, EmailStr, field_validator
 
 class CreateUserSchema(BaseModel):
     email: EmailStr
-    password: constr(min_length=8, max_length=72)
+    password: str
     plan: str = "free"
+    
+    @field_validator('password', mode='after')
+    @classmethod
+    def validate_password(cls, v):
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters')
+        if len(v.encode('utf-8')) > 72:
+            raise ValueError('Password must not exceed 72 bytes when encoded')
+        return v
 
 class UpdateUserSchema(BaseModel):
     email: EmailStr | None = None
-    password: constr(min_length=8, max_length=72) | None = None
+    password: str | None = None
     plan: str | None = None
+    
+    @field_validator('password', mode='after')
+    @classmethod
+    def validate_password(cls, v):
+        if v is None:
+            return v
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters')
+        if len(v.encode('utf-8')) > 72:
+            raise ValueError('Password must not exceed 72 bytes when encoded')
+        return v
+
