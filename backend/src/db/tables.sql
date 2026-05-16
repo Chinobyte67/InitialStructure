@@ -3,7 +3,6 @@ CREATE TABLE Usuario (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    age INTEGER NOT NULL,
     is_admin BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     plan VARCHAR(50) DEFAULT 'free'
@@ -68,12 +67,12 @@ CREATE TABLE seguidores (
     artista_id INTEGER REFERENCES Artista(id) ON DELETE CASCADE
 );
 INSERT INTO Artista (nombre, pais, genero_musical) VALUES ('Bizarrap', 'Argentina', 'Trap');
-INSERT INTO Usuario (email, password_hash, age, plan) VALUES ('elvis@example.com', '$2b$12$abcdefghijklmnopqrstuvwxYZ0123456789abcdefghi', 30, 'Premium');
+INSERT INTO Usuario (email, password_hash, plan) VALUES ('elvis@example.com', '$2b$12$abcdefghijklmnopqrstuvwxYZ0123456789abcdefghi', 'Premium');
 
 -- Insertar Álbum y Canción
 INSERT INTO Album (titulo, anio, artista_id) VALUES ('BZRP Music Sessions', 2023, 1);
 INSERT INTO Cancion (titulo, duracion_seg, album_id) VALUES ('Shakira Session #53', 213, 1);
 
 -- Crear una Playlist y agregar la canción
-INSERT INTO Playlist (nombre, usuario_id) VALUES ('Mis Favoritas 2024', 1);
-INSERT INTO playlist_canciones (playlist_id, cancion_id, orden) VALUES (1, 1, 1);
+INSERT INTO Playlist (nombre, usuario_id, fecha_creacion, es_publica) VALUES ('Mis Favoritas 2024', 1, '2024-01-15', 1);
+INSERT INTO playlist_canciones (playlist_id, cancion_id, orden, fecha_agregada) VALUES (1, 1, 1, '2024-01-15');

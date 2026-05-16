@@ -24,7 +24,6 @@ class UserService:
         user = self.repo.create(
             email=dto.email,
             password_hash=password_hash,
-            age=dto.age,
         )
         return to_user_response(user)
 
