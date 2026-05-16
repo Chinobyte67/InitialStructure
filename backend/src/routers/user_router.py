@@ -40,8 +40,8 @@ def seed_users(db: Session = Depends(get_db)):
     """Endpoint para crear usuarios de prueba."""
     service = UserService(db)
     users_to_create = [
-        CreateUserDTO(email="user1@example.com", password="password1", plan="premium"),
-        CreateUserDTO(email="user2@example.com", password="password2", plan="free"),
+        CreateUserDTO(email="user1@example.com", password="password1", nombre="Usuario Uno", plan="premium"),
+        CreateUserDTO(email="user2@example.com", password="password2", nombre="Usuario Dos", plan="free"),
     ]
     for dto in users_to_create:
         service.create(dto)

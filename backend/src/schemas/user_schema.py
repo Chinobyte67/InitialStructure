@@ -3,6 +3,7 @@ from pydantic import BaseModel, EmailStr, field_validator
 class CreateUserSchema(BaseModel):
     email: EmailStr
     password: str
+    nombre: str
     plan: str = "free"
     
     @field_validator('password', mode='after')
@@ -17,6 +18,7 @@ class CreateUserSchema(BaseModel):
 class UpdateUserSchema(BaseModel):
     email: EmailStr | None = None
     password: str | None = None
+    nombre: str | None = None
     plan: str | None = None
     
     @field_validator('password', mode='after')
