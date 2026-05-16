@@ -34,7 +34,7 @@ class ArtistaRepository:
         return to_artista_response(artista)
 
     def list_all(self) -> list[ArtistaResponseDTO]:
-        artistas = Artista.query.all()
+        artistas = self.db.query(Artista).all()
         return [to_artista_response(a) for a in artistas]
     
     def update(self, artista_id: int, update_artista_dto: UpdateArtistaDTO) -> ArtistaResponseDTO | None:

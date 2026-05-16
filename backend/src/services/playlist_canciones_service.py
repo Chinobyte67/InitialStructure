@@ -1,9 +1,11 @@
+from sqlalchemy.orm import Session
+
 from ..dtos.playlist_canciones_dto import CreatePlaylistCancionesDTO, PlaylistCancionesResponseDTO
 from ..repositories.playlist_canciones_repository import PlaylistCancionesRepository
 
 class PlaylistCancionesService:
-    def __init__(self):
-        self.playlist_canciones_repo = PlaylistCancionesRepository()
+    def __init__(self, db: Session):
+        self.playlist_canciones_repo = PlaylistCancionesRepository(db)
 
     def create_playlist_canciones(self, playlist_canciones_dto: CreatePlaylistCancionesDTO) -> PlaylistCancionesResponseDTO:
         return self.playlist_canciones_repo.create(playlist_canciones_dto)
