@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 
 interface CoverArtProps {
-  colors: [string, string];
+  colors?: [string, string];
   size?: "sm" | "md" | "lg";
   className?: string;
   rounded?: string;
@@ -20,8 +20,8 @@ const sizeMap = {
  */
 export function CoverArt({ colors, size = "md", className, rounded = "rounded-md" }: CoverArtProps) {
   const style = {
-    "--cover-from": colors[0],
-    "--cover-to": colors[1],
+    "--cover-from": colors?.[0] ?? "transparent",
+    "--cover-to": colors?.[1] ?? "transparent",
   } as CSSProperties;
   return (
     <div
