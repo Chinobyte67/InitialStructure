@@ -1,11 +1,5 @@
 import { Play, Heart, Plus, Trash2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import {
-  type Cancion,
-  getAlbum,
-  getArtistaDeCancion,
-  formatDur,
-} from "@/data/catalog";
 import { useApp } from "@/store/app";
 import { cn } from "@/lib/utils";
 import { CoverArt } from "@/components/CoverArt";
@@ -18,23 +12,59 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 
+function formatDur(seg: number): string {
+  const m = Math.floor(seg / 60);
+  const s = Math.floor(seg % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+export interface SongRowCancion {
+  id: string | number;
+  titulo: string;
+  duracion_seg: number;
+  album_id: string | number;
+}
+
+export interface SongRowAlbum {
+  id: string | number;
+  titulo: string;
+  artista_id: string | number;
+  anio?: number;
+  color?: [string, string];
+}
+
+export interface SongRowArtista {
+  id: string | number;
+  nombre: string;
+  pais: string;
+  genero_musical: string;
+}
+
 interface SongRowProps {
-  cancion: Cancion;
+  cancion: SongRowCancion;
+  album?: SongRowAlbum | null;
+  artista?: SongRowArtista | null;
   index?: number;
   showAlbum?: boolean;
   onRemove?: () => void;
   removeLabel?: string;
 }
 
-export function SongRow({ cancion, index, showAlbum = true, onRemove, removeLabel }: SongRowProps) {
-  const album = getAlbum(cancion.album_id);
-  const artista = getArtistaDeCancion(cancion);
+export function SongRow({
+  cancion,
+  album,
+  artista,
+  index,
+  showAlbum = true,
+  onRemove,
+  removeLabel,
+}: SongRowProps) {
   const play = useApp((s) => s.play);
   const favoritos = useApp((s) => s.favoritos);
   const toggleFav = useApp((s) => s.toggleFavorito);
   const playlists = useApp((s) => s.playlists);
   const addToPlaylist = useApp((s) => s.addToPlaylist);
-  const isFav = favoritos.includes(cancion.id);
+  const isFav = favoritos.includes(String(cancion.id));
   const [hover, setHover] = useState(false);
 
   return (
@@ -46,7 +76,7 @@ export function SongRow({ cancion, index, showAlbum = true, onRemove, removeLabe
       <div className="text-sm text-muted-foreground tabular-nums flex items-center justify-center w-10">
         {hover ? (
           <button
-            onClick={() => play(cancion.id)}
+            onClick={() => play(String(cancion.id))}
             className="text-foreground"
             aria-label="Reproducir"
           >
@@ -58,13 +88,13 @@ export function SongRow({ cancion, index, showAlbum = true, onRemove, removeLabe
       </div>
 
       <div className="flex items-center gap-3 min-w-0">
-        {album && <CoverArt colors={album.color} size="sm" />}
+        {album ? <CoverArt colors={album.color} size="sm" /> : <CoverArt size="sm" />}
         <div className="min-w-0">
           <div className="text-sm font-medium truncate">{cancion.titulo}</div>
           {artista && (
             <Link
               to="/artista/$id"
-              params={{ id: artista.id }}
+              params={{ id: String(artista.id) }}
               className="text-xs text-muted-foreground hover:text-primary hover:underline truncate block"
             >
               {artista.nombre}
@@ -76,7 +106,7 @@ export function SongRow({ cancion, index, showAlbum = true, onRemove, removeLabe
       {showAlbum && album ? (
         <Link
           to="/album/$id"
-          params={{ id: album.id }}
+          params={{ id: String(album.id) }}
           className="text-xs text-muted-foreground hover:text-primary hover:underline truncate hidden md:block"
         >
           {album.titulo}
@@ -86,7 +116,7 @@ export function SongRow({ cancion, index, showAlbum = true, onRemove, removeLabe
       )}
 
       <button
-        onClick={() => toggleFav(cancion.id)}
+        onClick={() => toggleFav(String(cancion.id))}
         className={cn(
           "transition-colors",
           isFav ? "text-primary" : "text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-foreground"
@@ -115,7 +145,7 @@ export function SongRow({ cancion, index, showAlbum = true, onRemove, removeLabe
               <DropdownMenuItem disabled>No tenés playlists</DropdownMenuItem>
             )}
             {playlists.map((p) => (
-              <DropdownMenuItem key={p.id} onClick={() => addToPlaylist(p.id, cancion.id)}>
+              <DropdownMenuItem key={p.id} onClick={() => addToPlaylist(p.id, String(cancion.id))}>
                 {p.nombre}
               </DropdownMenuItem>
             ))}

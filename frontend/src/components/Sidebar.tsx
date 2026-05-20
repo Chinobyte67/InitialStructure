@@ -12,10 +12,12 @@ import {
   LogIn,
   LogOut,
 } from "lucide-react";
-import { useApp } from "@/store/app";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "@/store/session";
+import { crearPlaylist, listarPlaylists } from "@/lib/playlists.functions";
+
+type PlaylistItem = { id: string; nombre: string };
 
 const mainNav = [
   { to: "/", label: "Inicio", icon: Home },
@@ -32,8 +34,7 @@ const libraryNav = [
 
 export function Sidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const playlists = useApp((s) => s.playlists);
-  const createPlaylist = useApp((s) => s.createPlaylist);
+  const [playlists, setPlaylists] = useState<PlaylistItem[]>([]);
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
@@ -42,17 +43,34 @@ export function Sidebar() {
   const setUser = useSession((s) => s.setUser);
   const authedEmail = sessionUser?.email ?? null;
 
-  const handleCreate = (e: React.FormEvent) => {
+  useEffect(() => {
+    let active = true;
+    listarPlaylists()
+      .then((data) => {
+        if (!active) return;
+        setPlaylists(data);
+      })
+      .catch(() => {
+        if (!active) return;
+        setPlaylists([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const res = createPlaylist(name, false);
-    if (res && "error" in res) {
-      setError(res.error);
-      return;
+    try {
+      const result = await crearPlaylist({ nombre: name, es_publica: false, colaborativa: false });
+      setPlaylists((current) => [result, ...current]);
+      setName("");
+      setCreating(false);
+      navigate({ to: "/playlist/$id", params: { id: String(result.id) } });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo crear la playlist");
     }
-    setName("");
-    setCreating(false);
-    navigate({ to: "/playlist/$id", params: { id: res.id } });
   };
 
   return (

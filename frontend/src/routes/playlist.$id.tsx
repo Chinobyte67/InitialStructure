@@ -1,9 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useApp } from "@/store/app";
-import { canciones, getAlbum, formatTotal } from "@/data/catalog";
 import { SongRow } from "@/components/SongRow";
 import { CoverArt } from "@/components/CoverArt";
-import { useMemo, useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Pencil, Trash2, Globe, Lock, Users, Play } from "lucide-react";
 import {
   Dialog,
@@ -13,43 +12,96 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  obtenerPlaylist,
+  renombrarPlaylist,
+  eliminarPlaylist,
+  cambiarVisibilidad,
+  cambiarColaborativa,
+  quitarCancion,
+} from "@/lib/playlists.functions";
 
 export const Route = createFileRoute("/playlist/$id")({
   component: PlaylistPage,
   head: () => ({ meta: [{ title: "Playlist — AuraStream" }] }),
 });
 
+type PlaylistTrackDetail = {
+  cancion_id: string;
+  orden: number;
+  fecha_agregada: string;
+  canciones: {
+    id: string;
+    titulo: string;
+    duracion_seg: number;
+    albumes: { titulo: string; artistas: { id: string; nombre: string; genero_musical: string } };
+  };
+};
+
+type PlaylistDetail = {
+  playlist: {
+    id: string;
+    nombre: string;
+    usuario_id: string;
+    fecha_creacion: string;
+    es_publica: boolean;
+    colaborativa: boolean;
+  };
+  tracks: PlaylistTrackDetail[];
+  total_seg: number;
+  colaboradores: string[];
+};
+
 function PlaylistPage() {
   const { id } = Route.useParams();
-  const playlist = useApp((s) => s.playlists.find((p) => p.id === id));
   const userId = useApp((s) => s.user.id);
-  const rename = useApp((s) => s.renamePlaylist);
-  const removeP = useApp((s) => s.deletePlaylist);
-  const togglePub = useApp((s) => s.togglePlaylistPublic);
-  const toggleCol = useApp((s) => s.togglePlaylistCollab);
-  const removeFromPlaylist = useApp((s) => s.removeFromPlaylist);
   const play = useApp((s) => s.play);
   const navigate = useNavigate();
 
+  const [playlist, setPlaylist] = useState<PlaylistDetail | null>(null);
+  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(playlist?.nombre ?? "");
+  const [name, setName] = useState("");
   const [editError, setEditError] = useState<string | null>(null);
+  const [pageError, setPageError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    setPageError(null);
+    obtenerPlaylist({ id })
+      .then((data) => {
+        setPlaylist(data);
+        setName(data.playlist.nombre);
+      })
+      .catch((err) => {
+        setPageError(err instanceof Error ? err.message : "No se pudo cargar la playlist");
+      })
+      .finally(() => setLoading(false));
+  }, [id]);
 
   const tracks = useMemo(() => {
     if (!playlist) return [];
     return playlist.tracks
       .slice()
       .sort((a, b) => a.orden - b.orden)
-      .map((t) => canciones.find((c) => c.id === t.cancion_id))
-      .filter((x): x is NonNullable<typeof x> => Boolean(x));
+      .map((t) => t.canciones);
   }, [playlist]);
 
   const totalSeg = tracks.reduce((acc, c) => acc + c.duracion_seg, 0);
 
-  if (!playlist) {
+  if (loading) {
     return (
       <div className="px-8 pt-12">
-        <p className="text-muted-foreground">Playlist no encontrada.</p>
+        <p className="text-muted-foreground">Cargando playlist...</p>
+      </div>
+    );
+  }
+
+  if (pageError || !playlist) {
+    return (
+      <div className="px-8 pt-12">
+        <p className="text-destructive">{pageError ?? "Playlist no encontrada."}</p>
         <Link to="/biblioteca" className="text-primary hover:underline">
           Volver a biblioteca
         </Link>
@@ -57,24 +109,83 @@ function PlaylistPage() {
     );
   }
 
-  const isOwner = playlist.usuario_id === userId;
-  const firstAlbum = tracks[0] ? getAlbum(tracks[0].album_id) : null;
-  const colors = firstAlbum?.color ?? (["oklch(0.40 0.15 280)", "oklch(0.20 0.05 280)"] as [string, string]);
+  const isOwner = playlist.playlist.usuario_id === userId;
+  const firstAlbum = tracks[0]?.albumes;
+  const colors = firstAlbum
+    ? (["oklch(0.40 0.15 280)", "oklch(0.20 0.05 280)"] as [string, string])
+    : (["oklch(0.40 0.15 280)", "oklch(0.20 0.05 280)"] as [string, string]);
 
-  const handleRename = () => {
+  const handleRename = async () => {
     setEditError(null);
-    const res = rename(playlist.id, name);
-    if (res && "error" in res) {
-      setEditError(res.error);
-      return;
+    try {
+      await renombrarPlaylist({ id: playlist.playlist.id, nombre: name });
+      setPlaylist((prev) =>
+        prev
+          ? {
+              ...prev,
+              playlist: { ...prev.playlist, nombre: name },
+            }
+          : prev
+      );
+      setEditing(false);
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : "No se pudo renombrar la playlist");
     }
-    setEditing(false);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!confirm("¿Eliminar esta playlist?")) return;
-    removeP(playlist.id);
-    navigate({ to: "/biblioteca" });
+    try {
+      await eliminarPlaylist({ id: playlist.playlist.id });
+      navigate({ to: "/biblioteca" });
+    } catch (err) {
+      setPageError(err instanceof Error ? err.message : "No se pudo eliminar la playlist");
+    }
+  };
+
+  const handleTogglePub = async () => {
+    try {
+      await cambiarVisibilidad({ id: playlist.playlist.id, es_publica: !playlist.playlist.es_publica });
+      setPlaylist((prev) =>
+        prev
+          ? {
+              ...prev,
+              playlist: { ...prev.playlist, es_publica: !prev.playlist.es_publica },
+            }
+          : prev
+      );
+    } catch (err) {
+      setPageError(err instanceof Error ? err.message : "No se pudo actualizar la visibilidad");
+    }
+  };
+
+  const handleToggleCol = async () => {
+    try {
+      await cambiarColaborativa({ id: playlist.playlist.id, colaborativa: !playlist.playlist.colaborativa });
+      setPlaylist((prev) =>
+        prev
+          ? {
+              ...prev,
+              playlist: { ...prev.playlist, colaborativa: !prev.playlist.colaborativa },
+            }
+          : prev
+      );
+    } catch (err) {
+      setPageError(err instanceof Error ? err.message : "No se pudo actualizar la colaboración");
+    }
+  };
+
+  const handleRemoveTrack = async (cancionId: string) => {
+    try {
+      await quitarCancion({ playlist_id: playlist.playlist.id, cancion_id: cancionId });
+      setPlaylist((prev) =>
+        prev
+          ? { ...prev, tracks: prev.tracks.filter((track) => track.cancion_id !== cancionId) }
+          : prev
+      );
+    } catch (err) {
+      setPageError(err instanceof Error ? err.message : "No se pudo quitar la canción");
+    }
   };
 
   return (
@@ -87,7 +198,7 @@ function PlaylistPage() {
           <CoverArt colors={colors} className="w-44 h-44 aspect-square shadow-emboss-lg" />
           <div className="min-w-0">
             <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-3">
-              {playlist.es_publica ? (
+              {playlist.playlist.es_publica ? (
                 <span className="flex items-center gap-1">
                   <Globe className="w-3 h-3" /> Pública
                 </span>
@@ -96,13 +207,13 @@ function PlaylistPage() {
                   <Lock className="w-3 h-3" /> Privada
                 </span>
               )}
-              {playlist.colaborativa && (
+              {playlist.playlist.colaborativa && (
                 <span className="flex items-center gap-1">
                   <Users className="w-3 h-3" /> Colaborativa
                 </span>
               )}
             </div>
-            <h1 className="text-5xl font-bold mb-3 truncate">{playlist.nombre}</h1>
+            <h1 className="text-5xl font-bold mb-3 truncate">{playlist.playlist.nombre}</h1>
             <div className="text-sm text-muted-foreground">
               {tracks.length} canciones · {formatTotal(totalSeg)}
             </div>
@@ -121,7 +232,7 @@ function PlaylistPage() {
             <>
               <button
                 onClick={() => {
-                  setName(playlist.nombre);
+                  setName(playlist.playlist.nombre);
                   setEditing(true);
                 }}
                 className="flex items-center gap-2 px-4 py-2 rounded-full text-sm bg-secondary text-secondary-foreground shadow-emboss hover:shadow-emboss-lg"
@@ -129,18 +240,18 @@ function PlaylistPage() {
                 <Pencil className="w-4 h-4" /> Renombrar
               </button>
               <button
-                onClick={() => togglePub(playlist.id)}
+                onClick={handleTogglePub}
                 className="flex items-center gap-2 px-4 py-2 rounded-full text-sm bg-secondary text-secondary-foreground shadow-emboss hover:shadow-emboss-lg"
               >
-                {playlist.es_publica ? <Lock className="w-4 h-4" /> : <Globe className="w-4 h-4" />}
-                Hacer {playlist.es_publica ? "privada" : "pública"}
+                {playlist.playlist.es_publica ? <Lock className="w-4 h-4" /> : <Globe className="w-4 h-4" />}
+                Hacer {playlist.playlist.es_publica ? "privada" : "pública"}
               </button>
               <button
-                onClick={() => toggleCol(playlist.id)}
+                onClick={handleToggleCol}
                 className="flex items-center gap-2 px-4 py-2 rounded-full text-sm bg-secondary text-secondary-foreground shadow-emboss hover:shadow-emboss-lg"
               >
                 <Users className="w-4 h-4" />
-                {playlist.colaborativa ? "Quitar colaborativa" : "Hacer colaborativa"}
+                {playlist.playlist.colaborativa ? "Quitar colaborativa" : "Hacer colaborativa"}
               </button>
               <button
                 onClick={handleDelete}
@@ -164,8 +275,15 @@ function PlaylistPage() {
               <SongRow
                 key={c.id}
                 cancion={c}
+                album={{ id: c.albumes.titulo, titulo: c.albumes.titulo, artista_id: c.albumes.artistas.id, color: ["oklch(0.40 0.15 280)", "oklch(0.20 0.05 280)"] }}
+                artista={{
+                  id: c.albumes.artistas.id,
+                  nombre: c.albumes.artistas.nombre,
+                  pais: "",
+                  genero_musical: c.albumes.artistas.genero_musical,
+                }}
                 index={i + 1}
-                onRemove={isOwner ? () => removeFromPlaylist(playlist.id, c.id) : undefined}
+                onRemove={isOwner ? () => handleRemoveTrack(c.id) : undefined}
                 removeLabel="Quitar de la playlist"
               />
             ))}

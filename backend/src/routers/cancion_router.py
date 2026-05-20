@@ -20,18 +20,23 @@ def create_cancion(payload: CreateCancionSchema, db: Session = Depends(get_db)):
     dto = CreateCancionDTO(**payload.model_dump())
     return CancionService(db).create_cancion(dto)
 
+
 def get_cancion(cancion_id: int, db: Session = Depends(get_db)):
     return CancionService(db).get_cancion_by_id(cancion_id)
 
-def list_canciones(db: Session = Depends(get_db)):
-    return CancionService(db).list_all_canciones()
+
+def list_canciones(db: Session = Depends(get_db), album_id: int | None = None):
+    return CancionService(db).list_canciones(album_id)
+
 
 def update_cancion(cancion_id: int, payload: CreateCancionSchema, db: Session = Depends(get_db)):
     dto = CreateCancionDTO(**payload.model_dump())
     return CancionService(db).update_cancion(cancion_id, dto)
 
+
 def delete_cancion(cancion_id: int, db: Session = Depends(get_db)):
     CancionService(db).delete_cancion(cancion_id)
+
 
 @router.get("/{cancion_id}", response_model=CancionResponseDTO)
 def get_cancion_endpoint(cancion_id: int, db: Session = Depends(get_db)):
@@ -40,9 +45,11 @@ def get_cancion_endpoint(cancion_id: int, db: Session = Depends(get_db)):
         return {"error": "Canción no encontrada"}
     return cancion
 
+
 @router.get("/", response_model=list[CancionResponseDTO])
-def list_canciones_endpoint(db: Session = Depends(get_db)):
-    return list_canciones(db)
+def list_canciones_endpoint(db: Session = Depends(get_db), album_id: int | None = None):
+    return list_canciones(db, album_id)
+
 
 @router.put("/{cancion_id}", response_model=CancionResponseDTO)
 def update_cancion_endpoint(cancion_id: int, payload: CreateCancionSchema, db: Session = Depends(get_db)):
@@ -50,6 +57,7 @@ def update_cancion_endpoint(cancion_id: int, payload: CreateCancionSchema, db: S
     if not cancion:
         return {"error": "Canción no encontrada"}
     return update_cancion(cancion_id, payload, db)
+
 
 @router.delete("/{cancion_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_cancion_endpoint(cancion_id: int, db: Session = Depends(get_db)):

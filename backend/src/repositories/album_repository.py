@@ -25,8 +25,11 @@ class AlbumRepository:
             return None
         return to_album_response(album)
 
-    def list_all(self) -> list[AlbumResponseDTO]:
-        albums = self.db.query(Album).all()
+    def list_all(self, artista_id: int | None = None) -> list[AlbumResponseDTO]:
+        query = self.db.query(Album)
+        if artista_id is not None:
+            query = query.filter(Album.artista_id == artista_id)
+        albums = query.all()
         return [to_album_response(a) for a in albums]
 
     def update(self, album_id: int, album_dto: UpdateAlbumDTO) -> AlbumResponseDTO | None:

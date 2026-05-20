@@ -13,8 +13,8 @@ class AlbumService:
     def get_album_by_id(self, album_id: int) -> AlbumResponseDTO | None:
         return self.album_repo.find_by_id(album_id)
 
-    def list_albums(self) -> list[AlbumResponseDTO]:
-        return self.album_repo.list_all()
+    def list_albums(self, artista_id: int | None = None) -> list[AlbumResponseDTO]:
+        return self.album_repo.list_all(artista_id)
 
     def update_album(self, album_id: int, album_dto: UpdateAlbumDTO) -> AlbumResponseDTO | None:
         return self.album_repo.update(album_id, album_dto)

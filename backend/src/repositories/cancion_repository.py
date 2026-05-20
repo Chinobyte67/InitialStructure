@@ -28,8 +28,11 @@ class CancionRepository:
             return None
         return to_cancion_response(cancion)
 
-    def list_all(self) -> list[CancionResponseDTO]:
-        canciones = self.db.query(Cancion).all()
+    def list_all(self, album_id: int | None = None) -> list[CancionResponseDTO]:
+        query = self.db.query(Cancion)
+        if album_id is not None:
+            query = query.filter(Cancion.album_id == album_id)
+        canciones = query.all()
         return [to_cancion_response(c) for c in canciones]
 
     def update(self, cancion_id: int, cancion_dto: CreateCancionDTO) -> CancionResponseDTO | None:

@@ -1,12 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import {
-  type Cancion,
-  type Plan,
-  canciones,
-  getCancion,
-  getArtistaDeCancion,
-} from "@/data/catalog";
+import { type Plan } from "@/data/catalog";
 
 export interface PlaylistTrack {
   cancion_id: string;
@@ -87,24 +81,6 @@ const DEFAULT_USER: UserState = {
   fecha_registro: new Date(2024, 0, 15).toISOString(),
 };
 
-// Seed: una playlist con 3 canciones para que la app no esté vacía.
-const seedPlaylists: Playlist[] = [
-  {
-    id: "p_seed",
-    nombre: "Late Night Vibes",
-    usuario_id: "u_self",
-    fecha_creacion: new Date(2025, 5, 1).toISOString(),
-    es_publica: true,
-    colaborativa: false,
-    colaboradores: [],
-    tracks: [
-      { cancion_id: canciones[0].id, orden: 1, fecha_agregada: new Date().toISOString() },
-      { cancion_id: canciones[7].id, orden: 2, fecha_agregada: new Date().toISOString() },
-      { cancion_id: canciones[14].id, orden: 3, fecha_agregada: new Date().toISOString() },
-    ],
-  },
-];
-
 // Seed reproducciones sintéticas para tops y wrapped.
 function seedReproducciones(): Reproduccion[] {
   const out: Reproduccion[] = [];
@@ -127,10 +103,10 @@ export const useApp = create<AppState>()(
   persist(
     (set, get) => ({
       user: DEFAULT_USER,
-      playlists: seedPlaylists,
-      favoritos: [canciones[2].id, canciones[10].id],
-      seguidos: ["a1", "a3"],
-      reproducciones: seedReproducciones(),
+      playlists: [],
+      favoritos: [],
+      seguidos: [],
+      reproducciones: [],
 
       currentSongId: canciones[0].id,
       isPlaying: false,
@@ -276,6 +252,7 @@ export const useApp = create<AppState>()(
       next: () => {
         const cur = get().currentSongId;
         const idx = canciones.findIndex((c) => c.id === cur);
+        if (idx === -1) return;
         const nextSong = canciones[(idx + 1) % canciones.length];
         get().play(nextSong.id);
       },
@@ -283,6 +260,7 @@ export const useApp = create<AppState>()(
       prev: () => {
         const cur = get().currentSongId;
         const idx = canciones.findIndex((c) => c.id === cur);
+        if (idx === -1) return;
         const prevSong = canciones[(idx - 1 + canciones.length) % canciones.length];
         get().play(prevSong.id);
       },
