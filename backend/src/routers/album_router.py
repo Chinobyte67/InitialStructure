@@ -35,5 +35,5 @@ def delete_album(album_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Album no encontrado")
     
 @router.get("/", response_model=list[AlbumResponseDTO])
-def list_albums(db: Session = Depends(get_db)):
-    return AlbumService(db).list_albums()
+def list_albums(db: Session = Depends(get_db), artista_id: int | None = None):
+    return AlbumService(db).list_albums(artista_id)

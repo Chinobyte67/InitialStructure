@@ -4,6 +4,7 @@ import { CoverArt } from "@/components/CoverArt";
 import { SectionHeader } from "@/components/SectionHeader";
 import { ListMusic, Heart, Disc3 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { listarPlaylists } from "@/lib/playlists.functions";
 
 const getColor = (id: string | number): [string, string] => {
   const colors = [
@@ -22,9 +23,17 @@ export const Route = createFileRoute("/biblioteca")({
 });
 
 function BibliotecaPage() {
-  const playlists = useApp((s) => s.playlists);
-  const [favoritos, setFavoritos] = useState(0);
-  const [seguidos, setSeguidos] = useState(0);
+  const favoritos = useApp((s) => s.favoritos);
+  const seguidos = useApp((s) => s.seguidos);
+  const [playlists, setPlaylists] = useState<{ id: string; nombre: string; es_publica: boolean }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    listarPlaylists()
+      .then((data) => setPlaylists(data))
+      .catch(() => setPlaylists([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div className="px-8 pt-8 pb-12 max-w-[1400px]">
@@ -68,7 +77,9 @@ function BibliotecaPage() {
 
       <section className="mb-10">
         <h2 className="text-lg font-semibold mb-4">Tus playlists</h2>
-        {playlists.length === 0 ? (
+        {loading ? (
+          <p className="text-sm text-muted-foreground">Cargando playlists...</p>
+        ) : playlists.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Aún no creaste ninguna. Usá el + en la barra lateral.
           </p>

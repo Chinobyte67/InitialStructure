@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   Play,
@@ -11,9 +11,15 @@ import {
   Repeat,
 } from "lucide-react";
 import { useApp } from "@/store/app";
-import { getAlbum, getCancion, getArtistaDeCancion, formatDur } from "@/data/catalog";
+import { api, type Album, type Artista, type Cancion } from "@/lib/api";
 import { CoverArt } from "@/components/CoverArt";
 import { cn } from "@/lib/utils";
+
+function formatDur(seg: number): string {
+  const m = Math.floor(seg / 60);
+  const s = Math.floor(seg % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
 
 export function PlayerBar() {
   const currentSongId = useApp((s) => s.currentSongId);
@@ -26,16 +32,63 @@ export function PlayerBar() {
   const favoritos = useApp((s) => s.favoritos);
   const toggleFavorito = useApp((s) => s.toggleFavorito);
 
+  const [cancion, setCancion] = useState<Cancion | null>(null);
+  const [album, setAlbum] = useState<Album | null>(null);
+  const [artista, setArtista] = useState<Artista | null>(null);
+
   useEffect(() => {
     if (!isPlaying) return;
     const id = setInterval(() => tick(1), 1000);
     return () => clearInterval(id);
   }, [isPlaying, tick]);
 
-  const cancion = currentSongId ? getCancion(currentSongId) : null;
-  const album = cancion ? getAlbum(cancion.album_id) : null;
-  const artista = cancion ? getArtistaDeCancion(cancion) : null;
-  const isFav = cancion ? favoritos.includes(cancion.id) : false;
+  useEffect(() => {
+    if (!currentSongId) {
+      setCancion(null);
+      setAlbum(null);
+      setArtista(null);
+      return;
+    }
+
+    const songId = Number(currentSongId);
+    if (Number.isNaN(songId)) {
+      setCancion(null);
+      setAlbum(null);
+      setArtista(null);
+      return;
+    }
+
+    let active = true;
+    api.canciones
+      .obtener(songId)
+      .then((song) => {
+        if (!active) return;
+        setCancion(song);
+        return api.albumes.obtener(Number(song.album_id));
+      })
+      .then((loadedAlbum) => {
+        if (!active || !loadedAlbum) return;
+        setAlbum(loadedAlbum);
+        return api.artistas.obtener(Number(loadedAlbum.artista_id));
+      })
+      .then((loadedArtista) => {
+        if (!active) return;
+        setArtista(loadedArtista);
+      })
+      .catch(() => {
+        if (active) {
+          setCancion(null);
+          setAlbum(null);
+          setArtista(null);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [currentSongId]);
+
+  const isFav = cancion ? favoritos.includes(String(cancion.id)) : false;
   const pct = cancion ? Math.min(100, (progress / cancion.duracion_seg) * 100) : 0;
 
   return (
@@ -43,7 +96,7 @@ export function PlayerBar() {
       <div className="flex items-center gap-3 w-1/4 min-w-0">
         {cancion && album ? (
           <>
-            <CoverArt colors={album.color} size="sm" />
+            <CoverArt size="sm" />
             <div className="min-w-0">
               <div className="text-sm font-medium truncate">{cancion.titulo}</div>
               {artista && (
@@ -57,7 +110,7 @@ export function PlayerBar() {
               )}
             </div>
             <button
-              onClick={() => toggleFavorito(cancion.id)}
+              onClick={() => toggleFavorito(String(cancion.id))}
               className={cn(
                 "ml-2 transition-colors",
                 isFav ? "text-primary" : "text-muted-foreground hover:text-foreground"

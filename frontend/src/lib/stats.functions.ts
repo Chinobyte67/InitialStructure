@@ -139,9 +139,25 @@ export const wrappedAnio = createServerFn({ method: "GET" })
       anio: data.anio,
       minutos_totales: minutos,
       canciones_distintas: cancMap.size,
-      top_canciones: [...cancMap.entries()].sort((a, b) => b[1].plays - a[1].plays).slice(0, 5),
-      top_artistas: [...artMap.values()].sort((a, b) => b.plays - a.plays).slice(0, 5),
-      top_generos: [...genMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([genero, plays]) => ({ genero, plays })),
+      top_canciones: [...cancMap.entries()]
+        .sort((a, b) => b[1].plays - a[1].plays)
+        .slice(0, 5)
+        .map(([cancion_id, value]) => ({
+          cancion_id,
+          plays: value.plays,
+          cancion: value.data,
+        })),
+      top_artistas: [...artMap.values()]
+        .sort((a, b) => b.plays - a.plays)
+        .slice(0, 5)
+        .map((value) => ({
+          plays: value.plays,
+          artista: value.data,
+        })),
+      top_generos: [...genMap.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([genero, plays]) => ({ genero, plays })),
     };
   });
 

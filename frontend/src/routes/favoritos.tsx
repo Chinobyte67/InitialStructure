@@ -1,7 +1,7 @@
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useApp } from "@/store/app";
-import { api, Album, Cancion } from "@/lib/api";
-import { canciones, getAlbum } from "@/data/catalog";
+import { api, type Album, type Artista, type Cancion } from "@/lib/api";
 import { SongRow } from "@/components/SongRow";
 import { Heart } from "lucide-react";
 
@@ -13,9 +13,37 @@ export const Route = createFileRoute("/favoritos")({
 function FavoritosPage() {
   const favoritos = useApp((s) => s.favoritos);
   const toggleFav = useApp((s) => s.toggleFavorito);
+  const [songs, setSongs] = useState<Cancion[]>([]);
+  const [albums, setAlbums] = useState<Album[]>([]);
+  const [artistas, setArtistas] = useState<Artista[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([api.canciones.listar(), api.albumes.listar(), api.artistas.listar()])
+      .then(([canciones, albumes, artistas]) => {
+        if (!active) return;
+        setSongs(canciones);
+        setAlbums(albumes);
+        setArtistas(artistas);
+      })
+      .catch(() => {
+        if (!active) return;
+        setSongs([]);
+        setAlbums([]);
+        setArtistas([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const songsById = useMemo(() => new Map(songs.map((c) => [String(c.id), c])), [songs]);
+  const albumsById = useMemo(() => new Map(albums.map((a) => [String(a.id), a])), [albums]);
+  const artistasById = useMemo(() => new Map(artistas.map((a) => [String(a.id), a])), [artistas]);
+
   const items = favoritos
-    .map((id) => canciones.find((c) => c.id === id))
-    .filter((x): x is NonNullable<typeof x> => Boolean(x));
+    .map((id) => songsById.get(String(id)))
+    .filter((c): c is Cancion => Boolean(c));
 
   return (
     <div>
@@ -39,18 +67,23 @@ function FavoritosPage() {
           </p>
         ) : (
           <div className="bg-card rounded-lg shadow-emboss p-2">
-            {items.map((c, i) => (
-              <SongRow
-                key={c.id}
-                cancion={c}
-                index={i + 1}
-                onRemove={() => toggleFav(c.id)}
-                removeLabel="Quitar de favoritos"
-              />
-            ))}
+            {items.map((c, i) => {
+              const album = albumsById.get(String(c.album_id));
+              const artista = album ? artistasById.get(String(album.artista_id)) : undefined;
+              return (
+                <SongRow
+                  key={c.id}
+                  cancion={c}
+                  album={album}
+                  artista={artista}
+                  index={i + 1}
+                  onRemove={() => toggleFav(String(c.id))}
+                  removeLabel="Quitar de favoritos"
+                />
+              );
+            })}
           </div>
         )}
-        <span className="hidden">{!!getAlbum}</span>
       </div>
     </div>
   );
