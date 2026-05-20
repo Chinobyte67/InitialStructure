@@ -6,11 +6,13 @@ class CreateUserDTO(BaseModel):
     email: str
     password: str
     age: int
+    plan: str = "free"
 
 
 class UserResponseDTO(BaseModel):
     id: int
     email: str
+    nombre: str
     age: int
     created_at: datetime
 
