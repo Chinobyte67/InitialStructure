@@ -5,7 +5,6 @@ class CreatePlaylistCancionesSchema(BaseModel):
     cancion_id: int
 
 class UpdatePlaylistCancionesSchema(BaseModel):
-    id: int
     playlist_id: int | None = None
     cancion_id: int | None = None
     orden: int | None = None

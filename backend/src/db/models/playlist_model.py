@@ -13,3 +13,4 @@ class Playlist(Base):
     usuario_id = Column(Integer, nullable=False)
     fecha_creacion = Column(String, nullable=False)
     es_publica = Column(Integer, nullable=False)
+    colaborativa = Column(Integer, nullable=False, default=0)

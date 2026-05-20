@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from ..dtos.playlist_canciones_dto import CreatePlaylistCancionesDTO, PlaylistCancionesResponseDTO
+from ..dtos.playlist_canciones_dto import CreatePlaylistCancionesDTO, UpdatePlaylistCancionesDTO, PlaylistCancionesResponseDTO
 from ..repositories.playlist_canciones_repository import PlaylistCancionesRepository
 
 class PlaylistCancionesService:
@@ -16,8 +16,11 @@ class PlaylistCancionesService:
     def list_all_playlist_canciones(self) -> list[PlaylistCancionesResponseDTO]:
         return self.playlist_canciones_repo.list_all()
 
+    def list_playlist_canciones_by_playlist_id(self, playlist_id: int) -> list[PlaylistCancionesResponseDTO]:
+        return self.playlist_canciones_repo.list_by_playlist(playlist_id)
+
     def delete_playlist_canciones(self, playlist_canciones_id: int) -> bool:
         return self.playlist_canciones_repo.delete(playlist_canciones_id)
     
-    def update_playlist_canciones(self, playlist_canciones_id: int, playlist_canciones_dto: CreatePlaylistCancionesDTO) -> PlaylistCancionesResponseDTO:
+    def update_playlist_canciones(self, playlist_canciones_id: int, playlist_canciones_dto: UpdatePlaylistCancionesDTO) -> PlaylistCancionesResponseDTO:
         return self.playlist_canciones_repo.update(playlist_canciones_id, playlist_canciones_dto)

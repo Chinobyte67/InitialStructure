@@ -16,8 +16,8 @@ class PlaylistController:
     def list_all_playlists(self) -> list[PlaylistResponseDTO]:
         return self.playlist_repository.list_all()
 
-    def delete_playlist(self, playlist_id: int) -> bool:
-        return self.playlist_repository.delete(playlist_id)
+    def delete_playlist(self, playlist_id: int, usuario_id: int) -> bool:
+        return self.playlist_repository.delete(playlist_id, usuario_id)
     
     def update_playlist(self, playlist_id: int, playlist_dto: CreatePlaylistDTO) -> PlaylistResponseDTO | None:
         return self.playlist_repository.update(playlist_id, playlist_dto)
