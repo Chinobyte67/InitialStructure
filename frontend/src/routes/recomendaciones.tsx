@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useApp, recomendaciones } from "@/store/app";
 import { api, Artista, Album, Cancion } from "@/lib/api";
+import { artistas, getAlbum, getArtistaDeCancion } from "@/data/catalog";
 import { CoverArt } from "@/components/CoverArt";
 import { SectionHeader } from "@/components/SectionHeader";
 import { useMemo } from "react";

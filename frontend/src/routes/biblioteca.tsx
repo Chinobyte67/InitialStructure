@@ -5,13 +5,15 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { ListMusic, Heart, Disc3 } from "lucide-react";
 import { useState, useEffect } from "react";
 
-const getColor = (id: number): [string, string] => {
+const getColor = (id: string | number): [string, string] => {
   const colors = [
     ["oklch(0.55 0.22 290)", "oklch(0.30 0.10 240)"] as [string, string],
     ["oklch(0.50 0.18 30)", "oklch(0.25 0.08 20)"] as [string, string],
     ["oklch(0.65 0.20 340)", "oklch(0.30 0.12 320)"] as [string, string],
   ];
-  return colors[id % colors.length];
+  const index = typeof id === "number" ? id : parseInt(String(id).replace(/\D/g, ""), 10);
+  const safeIndex = Number.isFinite(index) && index >= 0 ? index : 0;
+  return colors[safeIndex % colors.length];
 };
 
 export const Route = createFileRoute("/biblioteca")({
