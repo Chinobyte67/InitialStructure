@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   Play,
@@ -36,11 +36,38 @@ export function PlayerBar() {
   const [album, setAlbum] = useState<Album | null>(null);
   const [artista, setArtista] = useState<Artista | null>(null);
 
+  // Elemento <audio> real para reproducir el archivo alojado en Cloudinary.
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   useEffect(() => {
     if (!isPlaying) return;
     const id = setInterval(() => tick(1), 1000);
     return () => clearInterval(id);
   }, [isPlaying, tick]);
+
+  // Cargar el audio cuando cambia la canción.
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const src = cancion?.url_audio ?? "";
+    if (audio.src !== src) {
+      audio.src = src;
+      audio.currentTime = 0;
+    }
+  }, [cancion?.id, cancion?.url_audio]);
+
+  // Sincronizar play/pausa del <audio> con el estado del reproductor.
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !cancion?.url_audio) return;
+    if (isPlaying) {
+      audio.play().catch(() => {
+        /* el navegador puede bloquear autoplay hasta una interacción del usuario */
+      });
+    } else {
+      audio.pause();
+    }
+  }, [isPlaying, cancion?.id, cancion?.url_audio]);
 
   useEffect(() => {
     if (!currentSongId) {
@@ -93,6 +120,7 @@ export function PlayerBar() {
 
   return (
     <footer className="h-22 bg-card border-t border-border px-4 py-3 flex items-center justify-between gap-6 shadow-emboss">
+      <audio ref={audioRef} preload="metadata" />
       <div className="flex items-center gap-3 w-1/4 min-w-0">
         {cancion && album ? (
           <>

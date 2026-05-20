@@ -101,6 +101,8 @@ export interface Cancion {
   titulo: string;
   duracion_seg: number;
   album_id: number;
+  /** URL del audio (Cloudinary). Puede ser null si la canción aún no tiene archivo. */
+  url_audio?: string | null;
 }
 
 export interface Playlist {

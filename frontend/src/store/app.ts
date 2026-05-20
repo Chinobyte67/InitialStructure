@@ -1,6 +1,12 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { type Plan } from "@/data/catalog";
+import {
+  canciones,
+  getCancion,
+  getArtistaDeCancion,
+  type Cancion,
+  type Plan,
+} from "@/data/catalog";
 
 export interface PlaylistTrack {
   cancion_id: string;

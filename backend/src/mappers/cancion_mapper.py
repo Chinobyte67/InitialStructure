@@ -8,6 +8,7 @@ def to_cancion_response(cancion: Cancion) -> CancionResponseDTO:
         id=cancion.id,
         titulo=cancion.titulo,
         duracion_seg=cancion.duracion_seg,
-        album_id=cancion.album_id
+        album_id=cancion.album_id,
+        url_audio=cancion.url_audio,
     )
 

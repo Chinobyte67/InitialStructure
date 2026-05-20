@@ -27,8 +27,12 @@ CREATE TABLE Cancion (
     id SERIAL PRIMARY KEY,
     titulo VARCHAR(150) NOT NULL,
     duracion_seg INTEGER,
-    album_id INTEGER REFERENCES Album(id) ON DELETE CASCADE
+    album_id INTEGER REFERENCES Album(id) ON DELETE CASCADE,
+    url_audio TEXT  -- URL del audio alojado en Cloudinary
 );
+
+-- Si la tabla Cancion ya existe (base creada antes), correr solo esto:
+-- ALTER TABLE Cancion ADD COLUMN IF NOT EXISTS url_audio TEXT;
 
 CREATE TABLE Playlist (
     id SERIAL PRIMARY KEY,
@@ -90,21 +94,23 @@ INSERT INTO Album (titulo, anio, artista_id) VALUES
 ('Divide', 2017, 5);
 
 -- Insertar Canciones (2 por álbum)
-INSERT INTO Cancion (titulo, duracion_seg, album_id) VALUES
-('Lover Girl', 213, 1),
-('From the Start', 200, 1),
+-- url_audio: archivos de muestra públicos para poder probar la reproducción.
+-- Al subir a Cloudinary, reemplazar por el secure_url devuelto por la subida.
+INSERT INTO Cancion (titulo, duracion_seg, album_id, url_audio) VALUES
+('Lover Girl', 213, 1, 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'),
+('From the Start', 200, 1, 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'),
 
-('Anti-Hero', 240, 2),
-('Lavender Haze', 230, 2),
+('Anti-Hero', 240, 2, 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'),
+('Lavender Haze', 230, 2, 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'),
 
-('Yellow', 270, 3),
-('Shiver', 250, 3),
+('Yellow', 270, 3, 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3'),
+('Shiver', 250, 3, 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3'),
 
-('Hello', 295, 4),
-('Send My Love', 220, 4),
+('Hello', 295, 4, 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3'),
+('Send My Love', 220, 4, 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3'),
 
-('Shape of You', 240, 5),
-('Perfect', 263, 5);
+('Shape of You', 240, 5, 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3'),
+('Perfect', 263, 5, 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3');
 
 -- Crear Playlists
 INSERT INTO Playlist (nombre, usuario_id, fecha_creacion, es_publica) VALUES

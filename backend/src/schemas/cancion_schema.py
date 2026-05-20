@@ -7,6 +7,7 @@ class CreateCancionSchema(BaseModel):
     titulo: str
     duracion_seg: int
     album_id: int
+    url_audio: str | None = None
 
 class UpdateCancionSchema(BaseModel):
     # TODO: completar con los campos opcionales que se permiten actualizar.

@@ -16,6 +16,7 @@ class CancionRepository:
             titulo=cancion_dto.titulo,
             duracion_seg=cancion_dto.duracion_seg,
             album_id=cancion_dto.album_id,
+            url_audio=cancion_dto.url_audio,
         )
         self.db.add(cancion)
         self.db.commit()
@@ -42,6 +43,7 @@ class CancionRepository:
         cancion.titulo = cancion_dto.titulo
         cancion.duracion_seg = cancion_dto.duracion_seg
         cancion.album_id = cancion_dto.album_id
+        cancion.url_audio = cancion_dto.url_audio
         self.db.commit()
         self.db.refresh(cancion)
         return to_cancion_response(cancion)
