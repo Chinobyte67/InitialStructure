@@ -3,7 +3,16 @@ import { useApp } from "@/store/app";
 import { CoverArt } from "@/components/CoverArt";
 import { SectionHeader } from "@/components/SectionHeader";
 import { ListMusic, Heart, Disc3 } from "lucide-react";
-import { albumes, artistas, canciones } from "@/data/catalog";
+import { useState, useEffect } from "react";
+
+const getColor = (id: number): [string, string] => {
+  const colors = [
+    ["oklch(0.55 0.22 290)", "oklch(0.30 0.10 240)"] as [string, string],
+    ["oklch(0.50 0.18 30)", "oklch(0.25 0.08 20)"] as [string, string],
+    ["oklch(0.65 0.20 340)", "oklch(0.30 0.12 320)"] as [string, string],
+  ];
+  return colors[id % colors.length];
+};
 
 export const Route = createFileRoute("/biblioteca")({
   component: BibliotecaPage,
@@ -12,8 +21,8 @@ export const Route = createFileRoute("/biblioteca")({
 
 function BibliotecaPage() {
   const playlists = useApp((s) => s.playlists);
-  const favoritos = useApp((s) => s.favoritos);
-  const seguidos = useApp((s) => s.seguidos);
+  const [favoritos, setFavoritos] = useState(0);
+  const [seguidos, setSeguidos] = useState(0);
 
   return (
     <div className="px-8 pt-8 pb-12 max-w-[1400px]">
@@ -29,7 +38,7 @@ function BibliotecaPage() {
           </div>
           <div>
             <div className="font-semibold">Canciones favoritas</div>
-            <div className="text-xs text-muted-foreground">{favoritos.length} canciones</div>
+            <div className="text-xs text-muted-foreground">{favoritos} canciones</div>
           </div>
         </Link>
         <Link
@@ -41,7 +50,7 @@ function BibliotecaPage() {
           </div>
           <div>
             <div className="font-semibold">Artistas seguidos</div>
-            <div className="text-xs text-muted-foreground">{seguidos.length} artistas</div>
+            <div className="text-xs text-muted-foreground">{seguidos} artistas</div>
           </div>
         </Link>
         <div className="bg-card rounded-lg p-4 shadow-emboss flex items-center gap-3">
@@ -63,53 +72,30 @@ function BibliotecaPage() {
           </p>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {playlists.map((p) => {
-              const first = p.tracks[0];
-              const cancion = first ? canciones.find((c) => c.id === first.cancion_id) : null;
-              const al = cancion ? albumes.find((a) => a.id === cancion.album_id) : null;
-              const colors = al?.color ?? (["oklch(0.30 0.10 280)", "oklch(0.20 0.05 280)"] as [string, string]);
-              return (
-                <Link
-                  key={p.id}
-                  to="/playlist/$id"
-                  params={{ id: p.id }}
-                  className="bg-card rounded-lg p-3 shadow-emboss hover:shadow-emboss-lg transition-shadow"
-                >
-                  <CoverArt colors={colors} className="mb-3" />
-                  <div className="text-sm font-medium truncate">{p.nombre}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {p.tracks.length} canciones · {p.es_publica ? "Pública" : "Privada"}
-                  </div>
-                </Link>
-              );
-            })}
+            {playlists.map((p) => (
+              <Link
+                key={p.id}
+                to="/playlist/$id"
+                params={{ id: String(p.id) }}
+                className="bg-card rounded-lg p-3 shadow-emboss hover:shadow-emboss-lg transition-shadow"
+              >
+                <CoverArt colors={getColor(p.id)} className="mb-3" />
+                <div className="text-sm font-medium truncate">{p.nombre}</div>
+                <div className="text-xs text-muted-foreground">
+                  {p.es_publica ? "Pública" : "Privada"}
+                </div>
+              </Link>
+            ))}
           </div>
         )}
       </section>
 
       <section>
         <h2 className="text-lg font-semibold mb-4">Artistas que seguís</h2>
-        {seguidos.length === 0 ? (
+        {seguidos === 0 ? (
           <p className="text-sm text-muted-foreground">Todavía no seguís a nadie.</p>
         ) : (
-          <div className="flex gap-5 overflow-x-auto pb-3">
-            {seguidos.map((id) => {
-              const a = artistas.find((x) => x.id === id);
-              if (!a) return null;
-              return (
-                <Link
-                  key={a.id}
-                  to="/artista/$id"
-                  params={{ id: a.id }}
-                  className="flex flex-col items-center w-32 shrink-0"
-                >
-                  <CoverArt colors={a.color} rounded="rounded-full" className="w-28 h-28 mb-2" />
-                  <div className="text-sm font-medium truncate w-full text-center">{a.nombre}</div>
-                  <div className="text-xs text-muted-foreground">{a.genero_musical}</div>
-                </Link>
-              );
-            })}
-          </div>
+          <p className="text-sm text-muted-foreground">Seguís {seguidos} artistas.</p>
         )}
       </section>
     </div>

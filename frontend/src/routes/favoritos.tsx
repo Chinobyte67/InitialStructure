@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useApp } from "@/store/app";
-import { canciones, getAlbum } from "@/data/catalog";
+import { api, Album, Cancion } from "@/lib/api";
 import { SongRow } from "@/components/SongRow";
 import { Heart } from "lucide-react";
 
