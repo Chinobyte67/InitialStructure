@@ -1,12 +1,15 @@
+from datetime import datetime
+
 from pydantic import BaseModel
 
 class CreateReproduccionSchema(BaseModel):
-    nombre: str
-    descripcion: str | None = None
-    imagen_url: str | None = None
+    usuario_id: int
+    cancion_id: int
+    fecha: datetime
+    segundos_escuchados: int
 
 class UpdateReproduccionSchema(BaseModel):
-    id: int
-    nombre: str | None = None
-    descripcion: str | None = None
-    imagen_url: str | None = None
+    usuario_id: int | None = None
+    cancion_id: int | None = None
+    fecha: datetime | None = None
+    segundos_escuchados: int | None = None
