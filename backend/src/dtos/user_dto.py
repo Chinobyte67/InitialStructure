@@ -5,15 +5,13 @@ from pydantic import BaseModel
 class CreateUserDTO(BaseModel):
     email: str
     password: str
-    nombre: str
-    plan: str = "free"
+    age: int
 
 
 class UserResponseDTO(BaseModel):
     id: int
     email: str
-    nombre: str
-    plan: str
+    age: int
     created_at: datetime
 
     model_config = {"from_attributes": True}

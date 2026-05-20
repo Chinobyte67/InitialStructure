@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from src.dtos.user_dto import CreateUserDTO, UserResponseDTO
 from src.mappers.user_mapper import to_user_response
 from src.repositories.user_repository import UserRepository
-from src.utils.errors import NotFoundError, ConflictError
+from src.utils.errors import NotFoundError
 from src.utils.hash import hash_password
 
 
@@ -12,22 +12,14 @@ class UserService:
         self.repo = UserRepository(db)
 
     def create(self, dto: CreateUserDTO) -> UserResponseDTO:
-        # Verificar si ya existe un usuario con ese email
-        existing_user = self.repo.find_by_email(dto.email)
-        if existing_user:
-            raise ConflictError("Email already registered")
-
-        # Hashear la contraseña
+        """Hashea la password, crea el user y devuelve el DTO de respuesta."""
         password_hash = hash_password(dto.password)
-
-        # Crear el usuario
         user = self.repo.create(
             email=dto.email,
             password_hash=password_hash,
-            nombre=getattr(dto, 'nombre', None),
+            age=dto.age,
         )
         return to_user_response(user)
-
 
     def get_by_id(self, user_id: int) -> UserResponseDTO:
         user = self.repo.find_by_id(user_id)
