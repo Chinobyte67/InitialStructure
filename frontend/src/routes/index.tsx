@@ -4,6 +4,7 @@ import { api, Artista, Album, Cancion } from "@/lib/api";
 import { CoverArt } from "@/components/CoverArt";
 import { SectionHeader } from "@/components/SectionHeader";
 import { useMemo, useState, useEffect } from "react";
+import { listarPlaylists } from "@/lib/playlists.functions";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -21,8 +22,7 @@ const getColor = (id: number): [string, string] => {
 
 function Index() {
   const user = useApp((s) => s.user);
-  const playlists = useApp((s) => s.playlists);
-  
+  const [playlists, setPlaylists] = useState<{ id: string }[]>([]);
   const [albumes, setAlbumes] = useState<Album[]>([]);
   const [artistas, setArtistas] = useState<Artista[]>([]);
   const [canciones, setCanciones] = useState<Cancion[]>([]);
@@ -31,14 +31,16 @@ function Index() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [albs, arts, cans] = await Promise.all([
+        const [albs, arts, cans, pls] = await Promise.all([
           api.albumes.listar(),
           api.artistas.listar(),
           api.canciones.listar(),
+          listarPlaylists(),
         ]);
         setAlbumes(albs);
         setArtistas(arts);
         setCanciones(cans);
+        setPlaylists(pls);
       } catch (err) {
         console.error("Error loading data:", err);
       } finally {

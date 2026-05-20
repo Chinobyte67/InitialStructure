@@ -20,8 +20,8 @@ class CancionService:
     def get_cancion_by_id(self, cancion_id: int) -> CancionResponseDTO | None:
         return self.cancion_repo.find_by_id(cancion_id)
 
-    def list_all_canciones(self) -> list[CancionResponseDTO]:
-        return self.cancion_repo.list_all()
+    def list_canciones(self, album_id: int | None = None) -> list[CancionResponseDTO]:
+        return self.cancion_repo.list_all(album_id)
 
     def update_cancion(self, cancion_id: int, cancion_dto: CreateCancionDTO) -> CancionResponseDTO | None:
         return self.cancion_repo.update(cancion_id, cancion_dto)
