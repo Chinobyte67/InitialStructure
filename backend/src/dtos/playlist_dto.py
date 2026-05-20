@@ -9,6 +9,7 @@ class CreatePlaylistDTO(BaseModel):
     imagen_url: str | None = None
     fecha_creacion: str | None = None
     es_publica: int | None = None
+    colaborativa: int | None = None
 
 class PlaylistResponseDTO(BaseModel):
     id: int
@@ -16,3 +17,5 @@ class PlaylistResponseDTO(BaseModel):
     usuario_id: int
     fecha_creacion: str
     es_publica: int
+    colaborativa: int
+    colaboradores: list[int] = []
