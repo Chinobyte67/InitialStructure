@@ -3,12 +3,28 @@ from sqlalchemy.orm import Session
 from ..db.models.playlist_canciones_model import PlaylistCanciones
 from ..dtos.playlist_canciones_dto import CreatePlaylistCancionesDTO
 from ..mappers.playlist_canciones import to_playlist_canciones_response
+from ..utils.errors import ConflictError
 
 class PlaylistCancionesRepository:
     def __init__(self, db: Session):
         self.db = db
 
+    def _exists_song_in_playlist(self, playlist_id: int, cancion_id: int, exclude_id: int | None = None) -> bool:
+        query = self.db.query(PlaylistCanciones).filter(
+            PlaylistCanciones.playlist_id == playlist_id,
+            PlaylistCanciones.cancion_id == cancion_id,
+        )
+        if exclude_id is not None:
+            query = query.filter(PlaylistCanciones.id != exclude_id)
+        return self.db.query(query.exists()).scalar()
+
     def create(self, playlist_canciones_dto: CreatePlaylistCancionesDTO):
+        if self._exists_song_in_playlist(
+            playlist_canciones_dto.playlist_id,
+            playlist_canciones_dto.cancion_id,
+        ):
+            raise ConflictError("This song is already in the playlist")
+
         playlist_canciones = PlaylistCanciones(
             playlist_id=playlist_canciones_dto.playlist_id,
             cancion_id=playlist_canciones_dto.cancion_id,
@@ -42,6 +58,14 @@ class PlaylistCancionesRepository:
         playlist_canciones = self.db.query(PlaylistCanciones).filter(PlaylistCanciones.id == playlist_canciones_id).first()
         if not playlist_canciones:
             return None
+
+        if self._exists_song_in_playlist(
+            playlist_canciones_dto.playlist_id,
+            playlist_canciones_dto.cancion_id,
+            exclude_id=playlist_canciones_id,
+        ):
+            raise ConflictError("This song is already in the playlist")
+
         playlist_canciones.playlist_id = playlist_canciones_dto.playlist_id
         playlist_canciones.cancion_id = playlist_canciones_dto.cancion_id
         playlist_canciones.orden = playlist_canciones_dto.orden

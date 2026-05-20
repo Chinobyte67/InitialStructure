@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from src.db.connection import get_db
 from src.dtos.playlist_canciones_dto import CreatePlaylistCancionesDTO, PlaylistCancionesResponseDTO
-from src.schemas.playlist_canciones_schema import CreatePlaylistCancionesSchema
+from src.schemas.playlist_canciones_schema import CreatePlaylistCancionesSchema, UpdatePlaylistCancionesSchema
 from src.services.playlist_canciones_service import PlaylistCancionesService
 
 router = APIRouter(prefix="/playlist-canciones", tags=["playlist-canciones"])
@@ -31,6 +31,6 @@ def update_playlist_canciones(playlist_canciones_id: int, payload: CreatePlaylis
     return PlaylistCancionesService(db).update_playlist_canciones(playlist_canciones_id, dto)
 
 @router.patch("/{playlist_canciones_id}", response_model=PlaylistCancionesResponseDTO)
-def partial_update_playlist_canciones(playlist_canciones_id: int, payload: CreatePlaylistCancionesSchema | None = None, db: Session = Depends(get_db)):
+def partial_update_playlist_canciones(playlist_canciones_id: int, payload: UpdatePlaylistCancionesSchema | None = None, db: Session = Depends(get_db)):
     dto = CreatePlaylistCancionesDTO(**payload.model_dump()) if payload else None
     return PlaylistCancionesService(db).update_playlist_canciones(playlist_canciones_id, dto)
