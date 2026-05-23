@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 
 from src.db.connection import get_db
@@ -7,6 +7,8 @@ from src.dtos.user_dto import CreateUserDTO, UserResponseDTO
 from src.schemas.user_schema import CreateUserSchema, UpdateUserSchema
 from src.services.seguidores_services import SeguidoresController
 from src.services.user_service import UserService
+from src.services.favoritos_service import FavoritosService
+from src.dtos.cancion_dto import CancionResponseDTO
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -31,6 +33,22 @@ def list_users(db: Session = Depends(get_db)):
 @router.get("/{user_id}/seguidos", response_model=list[ArtistaResponseDTO])
 def list_seguidos(user_id: int, db: Session = Depends(get_db)):
     return SeguidoresController(db).list_artistas_seguidos_por_usuario(user_id)
+
+
+@router.get("/{user_id}/favoritos", response_model=list[CancionResponseDTO])
+def list_favoritos_usuario(user_id: int, db: Session = Depends(get_db)):
+    canciones = FavoritosService(db).list_favoritos_por_usuario(user_id)
+    if not canciones:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El usuario no tiene favoritos")
+    return canciones
+
+
+@router.delete("/{user_id}/favoritos/{cancion_id}", status_code=204)
+def delete_favorito_usuario(user_id: int, cancion_id: int, db: Session = Depends(get_db)):
+    success = FavoritosService(db).delete_favorito_por_usuario_cancion(user_id, cancion_id)
+    if not success:
+        from fastapi import HTTPException, status
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Favorito no encontrado")
 
 
 @router.put("/{user_id}", response_model=UserResponseDTO)

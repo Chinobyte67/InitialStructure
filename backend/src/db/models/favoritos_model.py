@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Numeric
+from sqlalchemy import Column, Integer, String, Numeric, UniqueConstraint
 
 from src.db.connection import Base
 
@@ -10,3 +10,7 @@ class Favoritos(Base):
     id = Column(Integer, primary_key=True)
     usuario_id = Column(Integer, nullable=False)
     cancion_id = Column(Integer, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("usuario_id", "cancion_id", name="uix_usuario_cancion"),
+    )

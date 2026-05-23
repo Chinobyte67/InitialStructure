@@ -72,6 +72,8 @@ CREATE TABLE favoritos (
     id SERIAL PRIMARY KEY,
     usuario_id INTEGER REFERENCES Usuario(id) ON DELETE CASCADE,
     cancion_id INTEGER REFERENCES Cancion(id) ON DELETE CASCADE
+    ,
+    UNIQUE (usuario_id, cancion_id)
 );
 
 CREATE TABLE seguidores (
