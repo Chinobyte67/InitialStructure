@@ -5,7 +5,6 @@ from pydantic import BaseModel
 class CreateReproduccionSchema(BaseModel):
     usuario_id: int
     cancion_id: int
-    fecha: datetime
     segundos_escuchados: int
 
 class UpdateReproduccionSchema(BaseModel):

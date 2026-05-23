@@ -56,7 +56,8 @@ CREATE TABLE Reproduccion (
     usuario_id INTEGER REFERENCES Usuario(id),
     cancion_id INTEGER REFERENCES Cancion(id),
     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    segundos_escuchados INTEGER
+    segundos_escuchados INTEGER,
+    cuenta_para_estadisticas BOOLEAN DEFAULT FALSE
 );
 
 --- Tablas de Relación N a M ---
@@ -151,3 +152,17 @@ INSERT INTO favoritos (usuario_id, cancion_id) VALUES
 INSERT INTO seguidores (usuario_id, artista_id) VALUES
 (2, 1), -- Ana sigue a Laufey
 (3, 3); -- Juan sigue a Coldplay
+
+-- ==================================================
+-- Sentencias útiles para bases ya existentes
+-- Ejecutar si la base fue creada antes de estos cambios
+-- ==================================================
+-- Añadir la columna `cuenta_para_estadisticas` si falta
+ALTER TABLE reproduccion
+ADD COLUMN IF NOT EXISTS cuenta_para_estadisticas BOOLEAN DEFAULT FALSE;
+
+-- Rellenar `cuenta_para_estadisticas` según el 30% de la duración
+UPDATE reproduccion r
+SET cuenta_para_estadisticas = (r.segundos_escuchados >= (0.3 * c.duracion_seg))
+FROM cancion c
+WHERE r.cancion_id = c.id;

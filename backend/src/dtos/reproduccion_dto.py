@@ -9,6 +9,7 @@ class ReproduccionResponseDTO(BaseModel):
     cancion_id: int
     fecha: datetime
     segundos_escuchados: int
+    cuenta_para_estadisticas: bool
 
     model_config = {
         "json_encoders": {datetime: lambda v: v.isoformat()}
@@ -17,5 +18,5 @@ class ReproduccionResponseDTO(BaseModel):
 class CreateReproduccionDTO(BaseModel):
     usuario_id: int
     cancion_id: int
-    fecha: datetime
     segundos_escuchados: int
+    cuenta_para_estadisticas: bool | None = None

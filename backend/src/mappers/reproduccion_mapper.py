@@ -7,5 +7,6 @@ def to_reproduccion_response(reproduccion: Reproduccion) -> ReproduccionResponse
         usuario_id=reproduccion.usuario_id,
         cancion_id=reproduccion.cancion_id,
         fecha=reproduccion.fecha,
-        segundos_escuchados=reproduccion.segundos_escuchados
+        segundos_escuchados=reproduccion.segundos_escuchados,
+        cuenta_para_estadisticas=bool(getattr(reproduccion, "cuenta_para_estadisticas", False)),
     )
