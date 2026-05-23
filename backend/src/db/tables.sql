@@ -39,7 +39,15 @@ CREATE TABLE Playlist (
     nombre VARCHAR(100) NOT NULL,
     usuario_id INTEGER REFERENCES Usuario(id) ON DELETE CASCADE,
     fecha_creacion VARCHAR(255) NOT NULL,
-    es_publica INTEGER NOT NULL
+    es_publica INTEGER NOT NULL,
+    colaborativa INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE playlist_colaboradores (
+    id SERIAL PRIMARY KEY,
+    playlist_id INTEGER REFERENCES Playlist(id) ON DELETE CASCADE,
+    usuario_id INTEGER REFERENCES Usuario(id) ON DELETE CASCADE,
+    UNIQUE (playlist_id, usuario_id)
 );
 
 --- Tablas de Actividad ---

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from ..db.models.playlist_model import Playlist
 from ..dtos.playlist_dto import CreatePlaylistDTO, PlaylistResponseDTO
 from ..mappers.playlist_mapper import to_playlist_response
+from ..repositories.playlist_colaboradores_repository import PlaylistColaboradoresRepository
 from ..repositories.user_repository import UserRepository
 from ..utils.errors import ConflictError, ForbiddenError, NotFoundError
 
@@ -11,6 +12,7 @@ class PlaylistRepository:
     #(id, nombre, usuario_id, fecha_creacion, es_publica)
     def __init__(self, db: Session):
         self.db = db
+        self.playlist_colaboradores_repository = PlaylistColaboradoresRepository(db)
 
     def _playlist_name_exists_for_user(self, usuario_id: int, nombre: str, exclude_id: int | None = None) -> bool:
         query = self.db.query(Playlist).filter(
@@ -33,19 +35,27 @@ class PlaylistRepository:
             usuario_id=playlist_dto.usuario_id,
             fecha_creacion=playlist_dto.fecha_creacion or date.today().isoformat(),
             es_publica=playlist_dto.es_publica if playlist_dto.es_publica is not None else 0,
+            colaborativa=playlist_dto.colaborativa if playlist_dto.colaborativa is not None else 0,
         )
         self.db.add(playlist)
         self.db.commit()
         self.db.refresh(playlist)
-        return to_playlist_response(playlist)
+        return to_playlist_response(playlist, self.playlist_colaboradores_repository.list_collaborators(playlist.id))
 
     def find_by_id(self, playlist_id: int) -> PlaylistResponseDTO | None:
         playlist = self.db.query(Playlist).filter(Playlist.id == playlist_id).first()
         if not playlist:
             return None
-        return to_playlist_response(playlist)
+        return to_playlist_response(playlist, self.playlist_colaboradores_repository.list_collaborators(playlist.id))
     
-    def update(self, playlist_id: int, updated_data: dict) -> PlaylistResponseDTO | None:
+    def update(self, playlist_id: int, updated_data: dict | CreatePlaylistDTO) -> PlaylistResponseDTO | None:
+        if hasattr(updated_data, "model_dump"):
+            updated_data = {k: v for k, v in updated_data.model_dump().items() if v is not None}
+        elif hasattr(updated_data, "dict"):
+            updated_data = {k: v for k, v in updated_data.dict().items() if v is not None}
+        else:
+            updated_data = {k: v for k, v in dict(updated_data).items() if v is not None}
+
         playlist = self.db.query(Playlist).filter(Playlist.id == playlist_id).first()
         if not playlist:
             return None
@@ -59,7 +69,7 @@ class PlaylistRepository:
             setattr(playlist, key, value)
         self.db.commit()
         self.db.refresh(playlist)
-        return to_playlist_response(playlist)
+        return to_playlist_response(playlist, self.playlist_colaboradores_repository.list_collaborators(playlist.id))
     
     def delete(self, playlist_id: int, usuario_id: int) -> bool:
         playlist = self.db.query(Playlist).filter(Playlist.id == playlist_id).first()
@@ -73,4 +83,7 @@ class PlaylistRepository:
 
     def list_all(self) -> list[PlaylistResponseDTO]:
         playlists = self.db.query(Playlist).all()
-        return [to_playlist_response(playlist) for playlist in playlists]
+        return [
+            to_playlist_response(playlist, self.playlist_colaboradores_repository.list_collaborators(playlist.id))
+            for playlist in playlists
+        ]
