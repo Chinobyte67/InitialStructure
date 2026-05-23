@@ -77,7 +77,8 @@ CREATE TABLE favoritos (
 CREATE TABLE seguidores (
     id SERIAL PRIMARY KEY,
     usuario_id INTEGER REFERENCES Usuario(id) ON DELETE CASCADE,
-    artista_id INTEGER REFERENCES Artista(id) ON DELETE CASCADE
+    artista_id INTEGER REFERENCES Artista(id) ON DELETE CASCADE,
+    UNIQUE (usuario_id, artista_id)
 );
 -- Insertar Usuarios
 INSERT INTO Usuario (email, nombre, password_hash, plan) VALUES

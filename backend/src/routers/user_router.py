@@ -2,8 +2,10 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from src.db.connection import get_db
+from src.dtos.artista_dto import ArtistaResponseDTO
 from src.dtos.user_dto import CreateUserDTO, UserResponseDTO
 from src.schemas.user_schema import CreateUserSchema, UpdateUserSchema
+from src.services.seguidores_services import SeguidoresController
 from src.services.user_service import UserService
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -24,6 +26,11 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
 @router.get("/", response_model=list[UserResponseDTO])
 def list_users(db: Session = Depends(get_db)):
     return UserService(db).list_all()
+
+
+@router.get("/{user_id}/seguidos", response_model=list[ArtistaResponseDTO])
+def list_seguidos(user_id: int, db: Session = Depends(get_db)):
+    return SeguidoresController(db).list_artistas_seguidos_por_usuario(user_id)
 
 
 @router.put("/{user_id}", response_model=UserResponseDTO)

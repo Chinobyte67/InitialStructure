@@ -3,7 +3,9 @@ from sqlalchemy.orm import Session
 
 from src.db.connection import get_db 
 from src.dtos.artista_dto import CreateArtistaDTO, UpdateArtistaDTO, ArtistaResponseDTO
+from src.dtos.seguidores_dto import UsuariosSeguidoresResponseDTO
 from src.services.artista_service import ArtistaService
+from src.services.seguidores_services import SeguidoresController
 from src.schemas.artista_schema import CreateArtistaSchema, UpdateArtistaSchema
 
 router = APIRouter(prefix="/artistas", tags=["artistas"])
@@ -37,3 +39,8 @@ def delete_artista(artista_id: int, db: Session = Depends(get_db)):
 @router.get("/", response_model=list[ArtistaResponseDTO])
 def list_artistas(db: Session = Depends(get_db)):
     return ArtistaService(db).list_artistas()
+
+
+@router.get("/{artista_id}/seguidores", response_model=UsuariosSeguidoresResponseDTO)
+def list_seguidores(artista_id: int, db: Session = Depends(get_db)):
+    return SeguidoresController(db).list_usuarios_seguidores_por_artista(artista_id)
