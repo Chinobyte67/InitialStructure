@@ -43,6 +43,24 @@ def list_favoritos_usuario(user_id: int, db: Session = Depends(get_db)):
     return canciones
 
 
+@router.get("/{user_id}/top-canciones", response_model=list[CancionResponseDTO])
+def get_top_canciones_usuario(user_id: int, db: Session = Depends(get_db)):
+    """Retorna las 10 canciones más escuchadas por el usuario (solo con reproducciones válidas)."""
+    canciones = UserService(db).get_top_canciones_por_usuario(user_id)
+    if not canciones:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El usuario no tiene canciones escuchadas")
+    return canciones
+
+
+@router.get("/{user_id}/top-artistas", response_model=list[ArtistaResponseDTO])
+def get_top_artistas_usuario(user_id: int, db: Session = Depends(get_db)):
+    """Retorna los 10 artistas más escuchados por el usuario (solo con reproducciones válidas)."""
+    artistas = UserService(db).get_top_artistas_por_usuario(user_id)
+    if not artistas:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El usuario no tiene artistas escuchados")
+    return artistas
+
+
 @router.delete("/{user_id}/favoritos/{cancion_id}", status_code=204)
 def delete_favorito_usuario(user_id: int, cancion_id: int, db: Session = Depends(get_db)):
     success = FavoritosService(db).delete_favorito_por_usuario_cancion(user_id, cancion_id)
