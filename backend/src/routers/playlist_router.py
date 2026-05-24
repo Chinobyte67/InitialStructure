@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from src.db.connection import get_db
 from src.dtos.playlist_canciones_dto import PlaylistCancionesResponseDTO
-from src.dtos.playlist_dto import CreatePlaylistDTO, PlaylistResponseDTO
+from src.dtos.playlist_dto import CreatePlaylistDTO, PlaylistResponseDTO, PlaylistResumenDTO
 from src.schemas.playlist_schema import CreatePlaylistSchema, UpdatePlaylistSchema
 from src.schemas.playlist_colaborador_schema import AddPlaylistColaboradorSchema
 from src.services.playlist_canciones_service import PlaylistCancionesService
@@ -21,6 +21,11 @@ def create_playlist(payload: CreatePlaylistSchema, db: Session = Depends(get_db)
 @router.get("/{playlist_id}", response_model=PlaylistResponseDTO)
 def get_playlist(playlist_id: int, db: Session = Depends(get_db)):
     return PlaylistController(db).get_playlist_by_id(playlist_id)
+
+@router.get("/{playlist_id}/resumen", response_model=PlaylistResumenDTO)
+def get_resumen_playlist(playlist_id: int, db: Session = Depends(get_db)):
+    """Retorna el resumen de la playlist con cantidad de canciones y duración total (hh:mm:ss)."""
+    return PlaylistController(db).get_resumen_playlist(playlist_id)
 
 @router.get("/", response_model=list[PlaylistResponseDTO])
 def list_playlists(db: Session = Depends(get_db)):

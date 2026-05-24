@@ -19,3 +19,9 @@ class PlaylistResponseDTO(BaseModel):
     es_publica: int
     colaborativa: int
     colaboradores: list[int] = []
+
+class PlaylistResumenDTO(BaseModel):
+    id: int
+    nombre: str
+    cantidad_canciones: int
+    duracion_total: str  # Formato: hh:mm:ss
