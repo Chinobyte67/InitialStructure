@@ -85,9 +85,13 @@ const del = <T>(path: string, bodyOrQuery?: unknown | Query) => {
 export interface UserResponse {
   id: number;
   email: string;
-  age: number;
+  nombre?: string | null;
+  plan: string;
+  is_admin: boolean;
   created_at: string;
 }
+
+export type Plan = "free" | "premium" | "familiar";
 
 export interface Token {
   access_token: string;
@@ -157,13 +161,13 @@ export const api = {
 
   // Usuarios
   usuarios: {
-    crear: (data: { email: string; password: string; age: number }) =>
-      post<UserResponse>("/users", data),
-    obtener: (id: number) => get<UserResponse>(`/users/${id}`),
-    listar: () => get<UserResponse[]>("/users"),
-    actualizar: (id: number, data: Partial<{ email: string; age: number }>) =>
-      put<UserResponse>(`/users/${id}`, data),
-    eliminar: (id: number) => del<{ ok: true }>(`/users/${id}`),
+    crear: (data: { email: string; password: string; nombre?: string | null; plan?: Plan }) =>
+      post<UserResponse>("/usuarios", data),
+    obtener: (id: number) => get<UserResponse>(`/usuarios/${id}`),
+    listar: () => get<UserResponse[]>("/usuarios"),
+    actualizar: (id: number, data: Partial<{ email: string; nombre?: string | null; plan?: Plan }>) =>
+      put<UserResponse>(`/usuarios/${id}`, data),
+    eliminar: (id: number) => del<{ ok: true }>(`/usuarios/${id}`),
   },
 
   // Artistas (si están implementados)

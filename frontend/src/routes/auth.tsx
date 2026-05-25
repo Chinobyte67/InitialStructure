@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { api, ApiError } from "@/lib/api";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { api, ApiError, type Plan } from "@/lib/api";
 import { useSession } from "@/store/session";
 
 export const Route = createFileRoute("/auth")({
@@ -21,7 +22,8 @@ function AuthPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [age, setAge] = useState<number | "">(18);
+  const [nombre, setNombre] = useState("");
+  const [plan, setPlan] = useState<Plan>("free");
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -36,12 +38,12 @@ function AuthPage() {
     try {
       if (mode === "signup") {
         if (!password) throw new Error("Ingresá una contraseña.");
-        if (age === "" || Number.isNaN(Number(age))) throw new Error("Ingresá una edad válida.");
 
         const u = await api.usuarios.crear({
           email: email.trim(),
           password,
-          age: Number(age),
+          nombre: nombre.trim() || undefined,
+          plan,
         });
         setUser(u);
       } else {
@@ -83,18 +85,24 @@ function AuthPage() {
             />
           </div>
           {mode === "signup" && (
-            <div>
-              <Label htmlFor="age">Edad</Label>
-              <Input
-                id="age"
-                type="number"
-                min={1}
-                value={age}
-                onChange={(e) => setAge(e.target.value === "" ? "" : Number(e.target.value))}
-                required
-              />
-            </div>
-          )}
+              <>
+                <div>
+                  <Label htmlFor="nombre">Nombre</Label>
+                  <Input id="nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={80} />
+                </div>
+                <div>
+                  <Label>Plan</Label>
+                  <Select value={plan} onValueChange={(v) => setPlan(v as Plan)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="free">Free</SelectItem>
+                      <SelectItem value="premium">Premium</SelectItem>
+                      <SelectItem value="familiar">Familiar</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
           {err && <p className="text-sm text-destructive">{err}</p>}
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? "..." : mode === "signup" ? "Registrarme" : "Entrar"}

@@ -13,7 +13,7 @@ from src.utils.errors import ForbiddenError
 
 router = APIRouter(prefix="/playlists", tags=["playlists"])
 
-@router.post("/", response_model=PlaylistResponseDTO)
+@router.post("", response_model=PlaylistResponseDTO)
 def create_playlist(payload: CreatePlaylistSchema, db: Session = Depends(get_db)):
     dto = CreatePlaylistDTO(**payload.model_dump())
     return PlaylistController(db).create_playlist(dto)
