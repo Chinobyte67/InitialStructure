@@ -250,7 +250,7 @@ export const api = {
   // Buscar
   buscar: {
     buscar: async (q: string) => {
-      const resp = await get<{ artistas: RawArtista[]; albumes: Album[]; canciones: Cancion[] }>(`/buscar`, { busqueda: q });
+      const resp = await get<{ artistas: RawArtista[]; albumes: Album[]; canciones: Cancion[] }>(`/buscar`, { q });
       return {
         ...resp,
         artistas: resp.artistas.map(normalizeArtista),

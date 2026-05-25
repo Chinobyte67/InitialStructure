@@ -21,7 +21,6 @@ class PlaylistResponseDTO(BaseModel):
     colaborativa: int
     colaboradores: list[int] = []
     canciones: list[PlaylistCancionesResponseDTO] = []
-    canciones: list[dict] = []
 
 class PlaylistResumenDTO(BaseModel):
     id: int

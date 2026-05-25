@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useApp } from "@/store/app";
+import { useSession } from "@/store/session";
 import { SongRow } from "@/components/SongRow";
 import { CoverArt } from "@/components/CoverArt";
 import { useState, useEffect, useMemo } from "react";
@@ -13,13 +14,13 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
-  obtenerPlaylist,
   renombrarPlaylist,
   eliminarPlaylist,
   cambiarVisibilidad,
   cambiarColaborativa,
   quitarCancion,
 } from "@/lib/playlists.functions";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/playlist/$id")({
   component: PlaylistPage,
@@ -27,34 +28,99 @@ export const Route = createFileRoute("/playlist/$id")({
 });
 
 type PlaylistTrackDetail = {
-  cancion_id: string;
+  cancion_id: number;
   orden: number;
   fecha_agregada: string;
   canciones: {
-    id: string;
+    id: number;
     titulo: string;
     duracion_seg: number;
-    albumes: { titulo: string; artistas: { id: string; nombre: string; genero_musical: string } };
+    albumes: { titulo: string; artistas: { id: number; nombre: string; genero_musical: string } };
   };
 };
 
 type PlaylistDetail = {
   playlist: {
-    id: string;
+    id: number;
     nombre: string;
-    usuario_id: string;
+    usuario_id: number;
     fecha_creacion: string;
-    es_publica: boolean;
-    colaborativa: boolean;
+    es_publica: number | boolean;
+    colaborativa: number | boolean;
+    colaboradores?: number[];
   };
   tracks: PlaylistTrackDetail[];
   total_seg: number;
   colaboradores: string[];
 };
 
+async function fetchPlaylistDetail(playlistId: number): Promise<PlaylistDetail> {
+  const pl = await api.playlists.obtener(playlistId);
+  if (!pl) throw new Error("Playlist no encontrada");
+
+  const tracks = await api.playlistCanciones.listarPorPlaylist(playlistId);
+  const tracksWithCancion = await Promise.all((tracks ?? []).map(async (t: any) => {
+    let cancion: any = null;
+    let album: any = null;
+    let artista: any = null;
+
+    try {
+      cancion = await api.canciones.obtener(t.cancion_id);
+    } catch {
+      cancion = null;
+    }
+
+    if (cancion) {
+      try {
+        album = await api.albumes.obtener(cancion.album_id);
+      } catch {
+        album = null;
+      }
+    }
+
+    if (album) {
+      try {
+        artista = await api.artistas.obtener(album.artista_id);
+      } catch {
+        artista = null;
+      }
+    }
+
+    return {
+      ...t,
+      canciones: {
+        id: cancion?.id ?? t.cancion_id,
+        titulo: cancion?.titulo ?? "Canción desconocida",
+        duracion_seg: cancion?.duracion_seg ?? 0,
+        albumes: {
+          titulo: album?.titulo ?? "Álbum desconocido",
+          artistas: {
+            id: artista?.id ?? 0,
+            nombre: artista?.nombre ?? "Artista desconocido",
+            genero_musical: artista?.genero_musical ?? artista?.genero ?? "unknown",
+          },
+        },
+      },
+    };
+  }));
+
+  const total_seg = tracksWithCancion.reduce((acc, t: any) => acc + (t.canciones?.duracion_seg ?? 0), 0);
+  const colaboradores = pl.colaboradores?.map(String) ?? [];
+
+  return { playlist: pl, tracks: tracksWithCancion, total_seg, colaboradores };
+}
+
+function formatTotal(seg: number): string {
+  const h = Math.floor(seg / 3600);
+  const m = Math.floor((seg % 3600) / 60);
+  const s = Math.floor(seg % 60);
+  return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
+
 function PlaylistPage() {
   const { id } = Route.useParams();
   const userId = useApp((s) => s.user.id);
+  const sessionUser = useSession((s) => s.user);
   const play = useApp((s) => s.play);
   const navigate = useNavigate();
 
@@ -67,9 +133,16 @@ function PlaylistPage() {
 
   useEffect(() => {
     if (!id) return;
+    const playlistId = Number(id);
+    if (Number.isNaN(playlistId)) {
+      setPageError("ID de playlist inválido");
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setPageError(null);
-    obtenerPlaylist({ id })
+    fetchPlaylistDetail(playlistId)
       .then((data) => {
         setPlaylist(data);
         setName(data.playlist.nombre);
@@ -135,8 +208,14 @@ function PlaylistPage() {
 
   const handleDelete = async () => {
     if (!confirm("¿Eliminar esta playlist?")) return;
+    const deleteUserId = Number(sessionUser?.id ?? userId);
+    if (Number.isNaN(deleteUserId)) {
+      setPageError("No estás autenticado correctamente para eliminar esta playlist.");
+      return;
+    }
+
     try {
-      await eliminarPlaylist({ id: playlist.playlist.id });
+      await eliminarPlaylist({ id: playlist.playlist.id, usuario_id: deleteUserId });
       navigate({ to: "/biblioteca" });
     } catch (err) {
       setPageError(err instanceof Error ? err.message : "No se pudo eliminar la playlist");

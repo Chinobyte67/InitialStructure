@@ -110,7 +110,14 @@ export const recomendaciones = createServerFn({ method: "GET" })
 
 // HU13 — Wrapped por año
 export const wrappedAnio = createServerFn({ method: "GET" })
-  .inputValidator((i) => z.object({ anio: z.number().int().min(2000).max(2100), usuario_id: z.number().int() }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        anio: z.coerce.number().int().min(2000).max(2100).default(new Date().getFullYear()),
+        usuario_id: z.coerce.number().int().default(1),
+      })
+      .parse(i ?? {})
+  )
   .handler(async ({ data }) => {
     const start = new Date(data.anio, 0, 1).toISOString();
     const end = new Date(data.anio + 1, 0, 1).toISOString();

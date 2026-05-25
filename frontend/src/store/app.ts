@@ -52,6 +52,7 @@ interface AppState {
   currentSongId: string | null;
   isPlaying: boolean;
   progress: number; // seconds played in current track
+  volume: number;
 
   // actions
   setUserPlan: (p: Plan) => void;
@@ -117,6 +118,7 @@ export const useApp = create<AppState>()(
       currentSongId: canciones[0].id,
       isPlaying: false,
       progress: 0,
+      volume: 0.75,
 
       setUserPlan: (plan) => set((s) => ({ user: { ...s.user, plan } })),
 
@@ -243,6 +245,11 @@ export const useApp = create<AppState>()(
             ? s.seguidos.filter((a) => a !== artistaId)
             : [...s.seguidos, artistaId],
         })),
+
+      setVolume: (value) =>
+        set(() => ({ volume: Math.min(1, Math.max(0, value)) })),
+
+      setProgress: (seconds) => set(() => ({ progress: Math.max(0, seconds) })),
 
       play: (cancionId) => {
         const prev = get().currentSongId;

@@ -14,6 +14,7 @@ from src.utils.errors import ForbiddenError
 router = APIRouter(prefix="/playlists", tags=["playlists"])
 
 @router.post("", response_model=PlaylistResponseDTO)
+@router.post("/", response_model=PlaylistResponseDTO)
 def create_playlist(payload: CreatePlaylistSchema, db: Session = Depends(get_db)):
     dto = CreatePlaylistDTO(**payload.model_dump())
     return PlaylistController(db).create_playlist(dto)
@@ -27,6 +28,7 @@ def get_resumen_playlist(playlist_id: int, db: Session = Depends(get_db)):
     """Retorna el resumen de la playlist con cantidad de canciones y duración total (hh:mm:ss)."""
     return PlaylistController(db).get_resumen_playlist(playlist_id)
 
+@router.get("", response_model=list[PlaylistResponseDTO])
 @router.get("/", response_model=list[PlaylistResponseDTO])
 def list_playlists(db: Session = Depends(get_db)):
     return PlaylistController(db).list_all_playlists()

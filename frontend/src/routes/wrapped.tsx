@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { SectionHeader } from "@/components/SectionHeader";
 import { CoverArt } from "@/components/CoverArt";
+import { useSession } from "@/store/session";
 import { wrappedAnio } from "@/lib/stats.functions";
 
 export const Route = createFileRoute("/wrapped")({
@@ -38,6 +39,7 @@ type WrappedSummary = {
 
 function WrappedPage() {
   const currentYear = new Date().getFullYear();
+  const sessionUser = useSession((s) => s.user);
   const [year, setYear] = useState<number>(currentYear);
   const [summary, setSummary] = useState<WrappedSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,11 +50,19 @@ function WrappedPage() {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    wrappedAnio({ anio: year })
+    if (!sessionUser) {
+      setSummary(null);
+      setError("Iniciá sesión para ver tu Wrapped anual.");
+      setLoading(false);
+      return;
+    }
+
+    const userId = Number(String(sessionUser.id).replace(/\D/g, "")) || 1;
+    wrappedAnio({ anio: year, usuario_id: userId })
       .then((data) => setSummary(data))
       .catch((err) => setError(err instanceof Error ? err.message : "No se pudo cargar Wrapped"))
       .finally(() => setLoading(false));
-  }, [year]);
+  }, [year, sessionUser]);
 
   if (loading) {
     return (

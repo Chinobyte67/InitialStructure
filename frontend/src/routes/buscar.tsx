@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { api, Artista, Album, Cancion } from "@/lib/api";
 import { CoverArt } from "@/components/CoverArt";
@@ -9,6 +9,12 @@ export const Route = createFileRoute("/buscar")({
   component: BuscarPage,
   head: () => ({ meta: [{ title: "Buscar — AuraStream" }] }),
 });
+
+type SearchResults = {
+  canciones: Cancion[];
+  artistas: Artista[];
+  albumes: Album[];
+};
 
 const getColor = (id: number): [string, string] => {
   const colors = [
@@ -21,39 +27,29 @@ const getColor = (id: number): [string, string] => {
 
 function BuscarPage() {
   const [q, setQ] = useState("");
-  const [allData, setAllData] = useState<{ canciones: Cancion[]; artistas: Artista[]; albumes: Album[] }>({
-    canciones: [],
-    artistas: [],
-    albumes: [],
-  });
+  const [results, setResults] = useState<SearchResults | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [cans, arts, albs] = await Promise.all([
-          api.canciones.listar(),
-          api.artistas.listar(),
-          api.albumes.listar(),
-        ]);
-        setAllData({ canciones: cans, artistas: arts, albumes: albs });
-      } catch (err) {
-        console.error("Error loading data:", err);
-      }
-    };
-    fetchData();
-  }, []);
+    const term = q.trim();
+    if (!term) {
+      setResults(null);
+      setError(null);
+      return;
+    }
 
-  const results = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    if (!term) return null;
-    return {
-      canciones: allData.canciones
-        .filter((c) => c.titulo.toLowerCase().includes(term))
-        .slice(0, 20),
-      artistas: allData.artistas.filter((a) => a.nombre.toLowerCase().includes(term)),
-      albumes: allData.albumes.filter((a) => a.titulo.toLowerCase().includes(term)),
-    };
-  }, [q, allData]);
+    setLoading(true);
+    setError(null);
+    api.buscar
+      .buscar(term)
+      .then((data) => setResults(data))
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : "No se pudo buscar");
+        setResults(null);
+      })
+      .finally(() => setLoading(false));
+  }, [q]);
 
   return (
     <div className="px-8 pt-8 pb-12 max-w-[1400px]">
@@ -68,7 +64,10 @@ function BuscarPage() {
         />
       </div>
 
-      {!results && (
+      {loading && <p className="text-muted-foreground">Buscando...</p>}
+      {error && <p className="text-destructive">{error}</p>}
+
+      {!q.trim() && (
         <div className="text-muted-foreground">
           Buscá canciones, artistas o álbumes por nombre.
         </div>
@@ -108,21 +107,18 @@ function BuscarPage() {
               <p className="text-sm text-muted-foreground">Sin coincidencias.</p>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {results.albumes.map((al) => {
-                  const a = allData.artistas.find((x) => x.id === al.artista_id);
-                  return (
-                    <Link
-                      key={al.id}
-                      to="/album/$id"
-                      params={{ id: String(al.id) }}
-                      className="bg-card rounded-lg p-3 shadow-emboss hover:shadow-emboss-lg"
-                    >
-                      <CoverArt colors={getColor(al.id)} className="mb-3" />
-                      <div className="text-sm font-medium truncate">{al.titulo}</div>
-                      <div className="text-xs text-muted-foreground truncate">{a?.nombre}</div>
-                    </Link>
-                  );
-                })}
+                {results.albumes.map((al) => (
+                  <Link
+                    key={al.id}
+                    to="/album/$id"
+                    params={{ id: String(al.id) }}
+                    className="bg-card rounded-lg p-3 shadow-emboss hover:shadow-emboss-lg"
+                  >
+                    <CoverArt colors={getColor(al.id)} className="mb-3" />
+                    <div className="text-sm font-medium truncate">{al.titulo}</div>
+                    <div className="text-xs text-muted-foreground truncate">{al.artista?.nombre ?? "Artista"}</div>
+                  </Link>
+                ))}
               </div>
             )}
           </section>

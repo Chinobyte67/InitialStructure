@@ -147,6 +147,7 @@
       repeating-radial-gradient(circle at 50% 50%, oklch(100% 0 0 / 0.06) 0 1px, transparent 1px 4px),
       linear-gradient(135deg, var(--cover-from, oklch(0.45 0.18 30)), var(--cover-to, oklch(0.30 0.10 280)));
     position: relative;
+    z-index: 0;
   }
   .cover-art::after {
     content: "";
@@ -154,5 +155,7 @@
     border-radius: 9999px;
     background: radial-gradient(circle, oklch(0.18 0.04 280) 35%, oklch(0.82 0.13 88) 36% 38%, oklch(0.18 0.04 280) 39%);
     box-shadow: 0 0 0 1px oklch(0% 0 0 / 0.4);
+    pointer-events: none;
+    z-index: 0;
   }
 }

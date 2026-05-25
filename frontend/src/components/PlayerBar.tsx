@@ -11,6 +11,7 @@ import {
   Repeat,
 } from "lucide-react";
 import { useApp } from "@/store/app";
+import { canciones } from "@/data/catalog";
 import { api, type Album, type Artista, type Cancion } from "@/lib/api";
 import { CoverArt } from "@/components/CoverArt";
 import { cn } from "@/lib/utils";
@@ -25,16 +26,22 @@ export function PlayerBar() {
   const currentSongId = useApp((s) => s.currentSongId);
   const isPlaying = useApp((s) => s.isPlaying);
   const progress = useApp((s) => s.progress);
+  const volume = useApp((s) => s.volume);
   const togglePlay = useApp((s) => s.togglePlay);
+  const play = useApp((s) => s.play);
   const next = useApp((s) => s.next);
   const prev = useApp((s) => s.prev);
   const tick = useApp((s) => s.tick);
+  const setVolume = useApp((s) => s.setVolume);
+  const setProgress = useApp((s) => s.setProgress);
   const favoritos = useApp((s) => s.favoritos);
   const toggleFavorito = useApp((s) => s.toggleFavorito);
 
   const [cancion, setCancion] = useState<Cancion | null>(null);
   const [album, setAlbum] = useState<Album | null>(null);
   const [artista, setArtista] = useState<Artista | null>(null);
+  const [shuffle, setShuffle] = useState(false);
+  const [repeatMode, setRepeatMode] = useState<"off" | "one" | "all">("off");
 
   // Elemento <audio> real para reproducir el archivo alojado en Cloudinary.
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -53,13 +60,24 @@ export function PlayerBar() {
     if (audio.src !== src) {
       audio.src = src;
       audio.currentTime = 0;
+      audio.load();
+      if (isPlaying) {
+        audio.play().catch(() => {
+          /* el navegador puede bloquear autoplay hasta una interacción del usuario */
+        });
+      }
     }
-  }, [cancion?.id, cancion?.url_audio]);
+  }, [cancion?.id, cancion?.url_audio, isPlaying]);
 
-  // Sincronizar play/pausa del <audio> con el estado del reproductor.
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || !cancion?.url_audio) return;
+    if (!audio) return;
+    audio.volume = volume;
+  }, [volume]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
     if (isPlaying) {
       audio.play().catch(() => {
         /* el navegador puede bloquear autoplay hasta una interacción del usuario */
@@ -67,7 +85,46 @@ export function PlayerBar() {
     } else {
       audio.pause();
     }
-  }, [isPlaying, cancion?.id, cancion?.url_audio]);
+  }, [isPlaying]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !cancion?.url_audio) return;
+
+    const handleTimeUpdate = () => {
+      setProgress(audio.currentTime);
+    };
+
+    const handleEnded = () => {
+      if (repeatMode === "one") {
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+        return;
+      }
+      if (shuffle) {
+        const randomSong = canciones[Math.floor(Math.random() * canciones.length)];
+        play(randomSong.id);
+        return;
+      }
+      next();
+    };
+
+    audio.addEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("ended", handleEnded);
+
+    return () => {
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("ended", handleEnded);
+    };
+  }, [next, play, setProgress, shuffle, repeatMode, cancion?.id, cancion?.url_audio]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !cancion) return;
+    if (Math.abs(audio.currentTime - progress) > 0.5) {
+      audio.currentTime = progress;
+    }
+  }, [progress, cancion?.id]);
 
   useEffect(() => {
     if (!currentSongId) {
@@ -119,9 +176,10 @@ export function PlayerBar() {
   const pct = cancion ? Math.min(100, (progress / cancion.duracion_seg) * 100) : 0;
 
   return (
-    <footer className="h-22 bg-card border-t border-border px-4 py-3 flex items-center justify-between gap-6 shadow-emboss">
-      <audio ref={audioRef} preload="metadata" />
-      <div className="flex items-center gap-3 w-1/4 min-w-0">
+    <footer className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur-lg shadow-emboss">
+      <div className="mx-auto flex max-w-[1280px] items-center gap-6 px-4 py-3">
+        <audio ref={audioRef} preload="metadata" />
+        <div className="flex items-center gap-3 min-w-0 w-full md:w-1/4">
         {cancion && album ? (
           <>
             <CoverArt size="sm" />
@@ -153,9 +211,16 @@ export function PlayerBar() {
         )}
       </div>
 
-      <div className="flex flex-col items-center flex-1 max-w-2xl">
-        <div className="flex items-center gap-5 mb-1.5">
-          <button className="text-muted-foreground hover:text-foreground" aria-label="Aleatorio">
+        <div className="flex flex-col items-center flex-1 max-w-2xl">
+          <div className="flex items-center gap-5 mb-1.5">
+          <button
+            onClick={() => setShuffle((prev) => !prev)}
+            className={cn(
+              "transition-colors",
+              shuffle ? "text-primary" : "text-muted-foreground hover:text-foreground"
+            )}
+            aria-label="Aleatorio"
+          >
             <Shuffle className="w-4 h-4" />
           </button>
           <button onClick={prev} className="text-muted-foreground hover:text-foreground" aria-label="Anterior">
@@ -171,7 +236,20 @@ export function PlayerBar() {
           <button onClick={next} className="text-muted-foreground hover:text-foreground" aria-label="Siguiente">
             <SkipForward className="w-5 h-5" />
           </button>
-          <button className="text-muted-foreground hover:text-foreground" aria-label="Repetir">
+          <button
+            onClick={() =>
+              setRepeatMode((mode) =>
+                mode === "off" ? "all" : mode === "all" ? "one" : "off"
+              )
+            }
+            className={cn(
+              "transition-colors",
+              repeatMode !== "off"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+            aria-label="Repetir"
+          >
             <Repeat className="w-4 h-4" />
           </button>
         </div>
@@ -179,22 +257,36 @@ export function PlayerBar() {
           <span className="text-[10px] tabular-nums text-muted-foreground w-9 text-right">
             {cancion ? formatDur(progress) : "0:00"}
           </span>
-          <div className="flex-grow h-1 rounded-full bg-muted shadow-deboss overflow-hidden">
-            <div
-              className="h-full bg-primary transition-all"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
+          <input
+            type="range"
+            min={0}
+            max={cancion?.duracion_seg ?? 0}
+            value={Math.min(progress, cancion?.duracion_seg ?? 0)}
+            onChange={(e) => {
+              const value = Number(e.target.value);
+              setProgress(value);
+              if (audioRef.current) audioRef.current.currentTime = value;
+            }}
+            className="flex-grow accent-primary"
+            aria-label="Progreso de la canción"
+          />
           <span className="text-[10px] tabular-nums text-muted-foreground w-9">
             {cancion ? formatDur(cancion.duracion_seg) : "0:00"}
           </span>
         </div>
       </div>
 
-      <div className="w-1/4 flex items-center justify-end gap-3">
-        <Volume2 className="w-4 h-4 text-muted-foreground" />
-        <div className="w-24 h-1 rounded-full bg-muted shadow-deboss overflow-hidden">
-          <div className="h-full w-2/3 bg-primary/70" />
+        <div className="hidden md:flex w-full md:w-1/4 items-center justify-end gap-3">
+          <Volume2 className="w-4 h-4 text-muted-foreground" />
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={Math.round(volume * 100)}
+            onChange={(e) => setVolume(Number(e.target.value) / 100)}
+            className="w-28 h-1 accent-primary cursor-pointer"
+            aria-label="Volumen"
+          />
         </div>
       </div>
     </footer>

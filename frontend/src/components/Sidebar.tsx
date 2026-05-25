@@ -15,7 +15,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { useSession } from "@/store/session";
-import { crearPlaylist, listarPlaylists } from "@/lib/playlists.functions";
+import { api } from "@/lib/api";
+import { listarPlaylists } from "@/lib/playlists.functions";
 
 type PlaylistItem = { id: number; nombre: string };
 
@@ -69,10 +70,10 @@ export function Sidebar() {
     }
 
     try {
-      const result = await crearPlaylist({
+      const result = await api.playlists.crear({
         nombre: name,
-        es_publica: false,
-        colaborativa: false,
+        es_publica: 0,
+        colaborativa: 0,
         usuario_id: sessionUser.id,
       });
 

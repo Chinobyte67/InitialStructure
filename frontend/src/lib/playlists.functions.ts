@@ -6,20 +6,26 @@ import { api } from "@/lib/api";
 export const crearPlaylist = createServerFn({ method: "POST" })
   .inputValidator((i) =>
     z.object({
-      nombre: z.string().trim().min(1).max(120),
-      es_publica: z.boolean().default(false),
-      colaborativa: z.boolean().default(false),
-      usuario_id: z.number().int(),
+      nombre: z.string().trim().min(1).max(120).optional(),
+      es_publica: z.boolean().default(false).optional(),
+      colaborativa: z.boolean().default(false).optional(),
+      usuario_id: z.number().int().optional(),
     }).parse(i)
   )
   .handler(async ({ data }) => {
+    if (!data || typeof data !== "object") throw new Error("Payload inválido al crear playlist");
+    if (!data.nombre || String(data.nombre).trim().length === 0) throw new Error("Nombre de playlist requerido");
+    if (data.usuario_id == null) throw new Error("Usuario no autenticado o usuario_id faltante");
+
     const payload = {
-      nombre: data.nombre,
+      nombre: String(data.nombre).trim(),
       es_publica: data.es_publica ? 1 : 0,
       colaborativa: data.colaborativa ? 1 : 0,
       usuario_id: data.usuario_id,
     };
+
     const row = await api.playlists.crear(payload);
+    if (!row) throw new Error("Respuesta vacía del servidor al crear playlist");
     return row;
   });
 
@@ -53,14 +59,14 @@ export const cambiarColaborativa = createServerFn({ method: "POST" })
   });
 
 export const agregarColaborador = createServerFn({ method: "POST" })
-  .inputValidator((i) => z.object({ playlist_id: z.number().int(), usuario_id: z.number().int(), usuario_dueno_id: z.number().int().optional() }).parse(i))
+  .inputValidator((i) => z.object({ playlist_id: z.number().int(), usuario_id: z.number().int(), usuario_dueno_id: z.number().int() }).parse(i))
   .handler(async ({ data }) => {
     await api.playlists.addColaborador(data.playlist_id, { usuario_id: data.usuario_id, usuario_dueno_id: data.usuario_dueno_id });
     return { ok: true };
   });
 
 export const quitarColaborador = createServerFn({ method: "POST" })
-  .inputValidator((i) => z.object({ playlist_id: z.number().int(), usuario_id: z.number().int(), usuario_dueno_id: z.number().int().optional() }).parse(i))
+  .inputValidator((i) => z.object({ playlist_id: z.number().int(), usuario_id: z.number().int(), usuario_dueno_id: z.number().int() }).parse(i))
   .handler(async ({ data }) => {
     await api.playlists.removeColaborador(data.playlist_id, data.usuario_id, data.usuario_dueno_id);
     return { ok: true };
@@ -92,11 +98,18 @@ export const listarPlaylists = createServerFn({ method: "GET" })
 
 // HU10 — Detalle de playlist con duración total
 export const obtenerPlaylist = createServerFn({ method: "GET" })
-  .inputValidator((i) => z.object({ id: z.number().int() }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({ id: z.union([z.number().int(), z.string().regex(/^[0-9]+$/)]) })
+      .parse(i)
+  )
   .handler(async ({ data }) => {
-    const pl = await api.playlists.obtener(data.id);
+    const playlistId = typeof data.id === "string" ? Number(data.id) : data.id;
+    if (Number.isNaN(playlistId)) throw new Error("ID de playlist inválido");
+
+    const pl = await api.playlists.obtener(playlistId);
     if (!pl) throw new Error("Playlist no encontrada");
-    const tracks = await api.playlistCanciones.listarPorPlaylist(data.id);
+    const tracks = await api.playlistCanciones.listarPorPlaylist(playlistId);
     const tracksWithCancion = await Promise.all((tracks ?? []).map(async (t: any) => {
       let cancion: any = null;
       let album: any = null;

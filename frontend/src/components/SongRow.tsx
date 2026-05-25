@@ -1,9 +1,11 @@
 import { Play, Heart, Plus, Trash2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useApp } from "@/store/app";
+import { useSession } from "@/store/session";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { CoverArt } from "@/components/CoverArt";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +13,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import { listarPlaylists } from "@/lib/playlists.functions";
 
 function formatDur(seg: number): string {
   const m = Math.floor(seg / 60);
@@ -40,6 +43,11 @@ export interface SongRowArtista {
   genero_musical: string;
 }
 
+interface PlaylistEntry {
+  id: number;
+  nombre: string;
+}
+
 interface SongRowProps {
   cancion: SongRowCancion;
   album?: SongRowAlbum | null;
@@ -62,10 +70,44 @@ export function SongRow({
   const play = useApp((s) => s.play);
   const favoritos = useApp((s) => s.favoritos);
   const toggleFav = useApp((s) => s.toggleFavorito);
-  const playlists = useApp((s) => s.playlists);
-  const addToPlaylist = useApp((s) => s.addToPlaylist);
-  const isFav = favoritos.includes(String(cancion.id));
+  const sessionUser = useSession((s) => s.user);
+  const [playlists, setPlaylists] = useState<PlaylistEntry[]>([]);
+  const [loadingPlaylists, setLoadingPlaylists] = useState(true);
   const [hover, setHover] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const isFav = favoritos.includes(String(cancion.id));
+
+  useEffect(() => {
+    let active = true;
+    listarPlaylists()
+      .then((data) => {
+        if (!active) return;
+        setPlaylists(data ?? []);
+      })
+      .catch(() => {
+        if (!active) return;
+        setPlaylists([]);
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoadingPlaylists(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleAddToPlaylist = async (playlistId: number) => {
+    setAddError(null);
+    try {
+      await api.playlistCanciones.crear(
+        { playlist_id: playlistId, cancion_id: Number(cancion.id) },
+        sessionUser ? Number(sessionUser.id) : undefined
+      );
+    } catch (err) {
+      setAddError(err instanceof Error ? err.message : "No se pudo agregar a la playlist");
+    }
+  };
 
   return (
     <div
@@ -141,14 +183,17 @@ export function SongRow({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Agregar a playlist</DropdownMenuLabel>
-            {playlists.length === 0 && (
+            {loadingPlaylists ? (
+              <DropdownMenuItem disabled>Cargando playlists...</DropdownMenuItem>
+            ) : playlists.length === 0 ? (
               <DropdownMenuItem disabled>No tenés playlists</DropdownMenuItem>
+            ) : (
+              playlists.map((p) => (
+                <DropdownMenuItem key={p.id} onClick={() => handleAddToPlaylist(p.id)}>
+                  {p.nombre}
+                </DropdownMenuItem>
+              ))
             )}
-            {playlists.map((p) => (
-              <DropdownMenuItem key={p.id} onClick={() => addToPlaylist(p.id, String(cancion.id))}>
-                {p.nombre}
-              </DropdownMenuItem>
-            ))}
           </DropdownMenuContent>
         </DropdownMenu>
         {onRemove && (
