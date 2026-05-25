@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
 from datetime import datetime, timedelta
 
-from src.dtos.user_dto import CreateUserDTO, UserResponseDTO
+from src.dtos.user_dto import CreateUserDTO, UserResponseDTO, UsuarioResumenAnualDTO
 from src.mappers.user_mapper import to_user_response
 from src.mappers.cancion_mapper import to_cancion_response
 from src.mappers.artista_mapper import to_artista_response
@@ -126,6 +126,77 @@ class UserService:
         
         # Convertir a DTOs
         return [to_artista_response(artista) for artista, cantidad in resultado]
+
+    def get_resumen_anual(self, usuario_id: int, anio: int) -> UsuarioResumenAnualDTO:
+        """
+        Retorna el resumen anual del usuario.
+        Solo cuenta reproducciones válidas del año pedido.
+        """
+        user = self.repo.find_by_id(usuario_id)
+        if not user:
+            raise NotFoundError("User not found")
+
+        inicio = datetime(anio, 1, 1)
+        fin = datetime(anio, 12, 31, 23, 59, 59, 999999)
+
+        base_filter = [
+            Reproduccion.usuario_id == usuario_id,
+            Reproduccion.cuenta_para_estadisticas == True,
+            Reproduccion.fecha >= inicio,
+            Reproduccion.fecha <= fin,
+        ]
+
+        total_reproducciones = self.db.query(func.count(Reproduccion.id)).filter(*base_filter).scalar()
+        if not total_reproducciones:
+            raise NotFoundError("No reproducciones válidas en el año solicitado")
+
+        top_canciones = (
+            self.db.query(Cancion)
+            .join(Reproduccion, Cancion.id == Reproduccion.cancion_id)
+            .filter(*base_filter)
+            .group_by(Cancion.id)
+            .order_by(func.count(Reproduccion.id).desc())
+            .limit(5)
+            .all()
+        )
+
+        top_artistas = (
+            self.db.query(Artista)
+            .join(Album, Album.artista_id == Artista.id)
+            .join(Cancion, Cancion.album_id == Album.id)
+            .join(Reproduccion, Reproduccion.cancion_id == Cancion.id)
+            .filter(*base_filter)
+            .group_by(Artista.id)
+            .order_by(func.count(Reproduccion.id).desc())
+            .limit(5)
+            .all()
+        )
+
+        top_generos_result = (
+            self.db.query(Artista.genero_musical)
+            .join(Album, Album.artista_id == Artista.id)
+            .join(Cancion, Cancion.album_id == Album.id)
+            .join(Reproduccion, Reproduccion.cancion_id == Cancion.id)
+            .filter(*base_filter)
+            .group_by(Artista.genero_musical)
+            .order_by(func.count(Reproduccion.id).desc())
+            .limit(3)
+            .all()
+        )
+        top_generos = [g[0] for g in top_generos_result]
+
+        total_seconds = self.db.query(func.coalesce(func.sum(Reproduccion.segundos_escuchados), 0)).filter(*base_filter).scalar() or 0
+        total_minutos = round(total_seconds / 60, 1)
+
+        canciones_distintas = self.db.query(func.count(func.distinct(Reproduccion.cancion_id))).filter(*base_filter).scalar() or 0
+
+        return UsuarioResumenAnualDTO(
+            top_canciones=[to_cancion_response(c) for c in top_canciones],
+            top_artistas=[to_artista_response(a) for a in top_artistas],
+            top_generos=top_generos,
+            total_minutos_escuchados=total_minutos,
+            cantidad_canciones_distintas=int(canciones_distintas),
+        )
 
     def get_recomendaciones(self, usuario_id: int, limit: int = 10) -> list:
         """

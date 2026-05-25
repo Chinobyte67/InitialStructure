@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from src.db.connection import get_db
 from src.dtos.artista_dto import ArtistaResponseDTO
-from src.dtos.user_dto import CreateUserDTO, UserResponseDTO
+from src.dtos.user_dto import CreateUserDTO, UserResponseDTO, UsuarioResumenAnualDTO
 from src.schemas.user_schema import CreateUserSchema, UpdateUserSchema
 from src.services.seguidores_services import SeguidoresController
 from src.services.user_service import UserService
@@ -59,6 +59,13 @@ def get_top_artistas_usuario(user_id: int, db: Session = Depends(get_db)):
     if not artistas:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El usuario no tiene artistas escuchados")
     return artistas
+
+
+@router.get("/{user_id}/resumen", response_model=UsuarioResumenAnualDTO)
+def get_resumen_anual_usuario(user_id: int, anio: int, db: Session = Depends(get_db)):
+    """Retorna el resumen anual del usuario para un año específico."""
+    resumen = UserService(db).get_resumen_anual(user_id, anio)
+    return resumen
 
 
 @router.get("/{user_id}/recomendaciones", response_model=list[CancionResponseDTO])
