@@ -45,6 +45,13 @@ class PlaylistCancionesService:
             return False
         self._verify_write_access(playlist_canciones.playlist_id, usuario_id)
         return self.playlist_canciones_repo.delete(playlist_canciones_id)
+
+    def delete_playlist_canciones_by_playlist_and_cancion(self, playlist_id: int, cancion_id: int, usuario_id: int) -> bool:
+        playlist_canciones = self.playlist_canciones_repo.find_by_playlist_and_song(playlist_id, cancion_id)
+        if not playlist_canciones:
+            return False
+        self._verify_write_access(playlist_id, usuario_id)
+        return self.playlist_canciones_repo.delete_by_playlist_and_song(playlist_id, cancion_id)
     
     def update_playlist_canciones(self, playlist_canciones_id: int, playlist_canciones_dto: UpdatePlaylistCancionesDTO, usuario_id: int) -> PlaylistCancionesResponseDTO:
         playlist_canciones = self.playlist_canciones_repo.find_by_id(playlist_canciones_id)

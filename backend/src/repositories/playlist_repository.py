@@ -2,6 +2,8 @@ from datetime import date
 from sqlalchemy.orm import Session
 
 from ..db.models.playlist_model import Playlist
+from ..db.models.playlist_canciones_model import PlaylistCanciones
+from ..db.models.playlist_colaborador_model import PlaylistColaborador
 from ..dtos.playlist_dto import CreatePlaylistDTO, PlaylistResponseDTO
 from ..mappers.playlist_mapper import to_playlist_response
 from ..repositories.playlist_canciones_repository import PlaylistCancionesRepository
@@ -90,6 +92,9 @@ class PlaylistRepository:
             return False
         if playlist.usuario_id != usuario_id:
             raise ForbiddenError("Solo el dueño de la playlist puede eliminarla")
+
+        self.db.query(PlaylistCanciones).filter(PlaylistCanciones.playlist_id == playlist_id).delete(synchronize_session=False)
+        self.db.query(PlaylistColaborador).filter(PlaylistColaborador.playlist_id == playlist_id).delete(synchronize_session=False)
         self.db.delete(playlist)
         self.db.commit()
         return True

@@ -83,10 +83,10 @@ export const agregarCancion = createServerFn({ method: "POST" })
 export const quitarCancion = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ playlist_id: z.number().int(), cancion_id: z.number().int(), usuario_id: z.number().int().optional() }).parse(i))
   .handler(async ({ data }) => {
-    const tracks = await api.playlistCanciones.listarPorPlaylist(data.playlist_id);
-    const match = (tracks ?? []).find((t: any) => t.cancion_id === data.cancion_id);
-    if (!match) throw new Error("Canción no encontrada en la playlist");
-    await api.playlistCanciones.eliminar(match.id, data.usuario_id);
+    const result = await api.playlistCanciones.eliminarPorPlaylist(data.playlist_id, data.cancion_id, data.usuario_id);
+    if (!result?.ok) {
+      throw new Error("No se pudo eliminar la canción de la playlist");
+    }
     return { ok: true };
   });
 

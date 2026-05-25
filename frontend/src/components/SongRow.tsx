@@ -55,6 +55,7 @@ interface SongRowProps {
   index?: number;
   showAlbum?: boolean;
   onRemove?: () => void;
+  showDelete?: boolean;
   removeLabel?: string;
 }
 
@@ -65,6 +66,7 @@ export function SongRow({
   index,
   showAlbum = true,
   onRemove,
+  showDelete = true,
   removeLabel,
 }: SongRowProps) {
   const play = useApp((s) => s.play);
@@ -113,7 +115,7 @@ export function SongRow({
     <div
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      className="grid grid-cols-[2.5rem_1fr_1fr_auto_3rem] items-center gap-4 px-3 py-2 rounded-md hover:bg-muted/50 group transition-colors"
+      className="grid grid-cols-[2.5rem_1fr_1fr_auto_minmax(10rem,auto)] items-center gap-4 px-3 py-2 rounded-md hover:bg-muted/50 group transition-colors"
     >
       <div className="text-sm text-muted-foreground tabular-nums flex items-center justify-center w-10">
         {hover ? (
@@ -160,7 +162,7 @@ export function SongRow({
       <button
         onClick={() => toggleFav(String(cancion.id))}
         className={cn(
-          "transition-colors",
+          "transition-colors mr-4",
           isFav ? "text-primary" : "text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-foreground"
         )}
         aria-label="Favorito"
@@ -168,7 +170,7 @@ export function SongRow({
         <Heart className="w-4 h-4" fill={isFav ? "currentColor" : "none"} />
       </button>
 
-      <div className="flex items-center gap-2 justify-end">
+      <div className="flex items-center gap-4 justify-end min-w-[8rem]">
         <span className="text-xs text-muted-foreground tabular-nums">
           {formatDur(cancion.duracion_seg)}
         </span>
@@ -196,10 +198,11 @@ export function SongRow({
             )}
           </DropdownMenuContent>
         </DropdownMenu>
-        {onRemove && (
+        {onRemove && showDelete && (
           <button
             onClick={onRemove}
-            className="text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive"
+            title={removeLabel ?? "Quitar"}
+            className="text-destructive hover:text-destructive"
             aria-label={removeLabel ?? "Quitar"}
           >
             <Trash2 className="w-4 h-4" />

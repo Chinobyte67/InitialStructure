@@ -88,7 +88,37 @@ class PlaylistCancionesRepository:
             .all()
         )
         return [to_playlist_canciones_response(pc) for pc in playlist_canciones_list]
-    
+
+    def find_by_playlist_and_song(self, playlist_id: int, cancion_id: int):
+        playlist_canciones = (
+            self.db.query(PlaylistCanciones)
+            .filter(
+                PlaylistCanciones.playlist_id == playlist_id,
+                PlaylistCanciones.cancion_id == cancion_id,
+            )
+            .first()
+        )
+        if not playlist_canciones:
+            return None
+        return to_playlist_canciones_response(playlist_canciones)
+
+    def delete_by_playlist_and_song(self, playlist_id: int, cancion_id: int) -> bool:
+        playlist_canciones = (
+            self.db.query(PlaylistCanciones)
+            .filter(
+                PlaylistCanciones.playlist_id == playlist_id,
+                PlaylistCanciones.cancion_id == cancion_id,
+            )
+            .first()
+        )
+        if not playlist_canciones:
+            return False
+
+        self.db.delete(playlist_canciones)
+        self.db.commit()
+        self._reorder_playlist(playlist_id)
+        return True
+
     def delete(self, playlist_canciones_id: int) -> bool:
         playlist_canciones = self.db.query(PlaylistCanciones).filter(PlaylistCanciones.id == playlist_canciones_id).first()
         if not playlist_canciones:

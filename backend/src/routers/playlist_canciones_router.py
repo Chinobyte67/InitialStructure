@@ -33,6 +33,20 @@ def delete_playlist_canciones(
 ):
     return PlaylistCancionesService(db).delete_playlist_canciones(playlist_canciones_id, usuario_id)
 
+@router.delete("/playlist/{playlist_id}/canciones/{cancion_id}", response_model=dict[str, bool])
+def delete_playlist_canciones_by_playlist_and_cancion(
+    playlist_id: int,
+    cancion_id: int,
+    usuario_id: int,
+    db: Session = Depends(get_db),
+):
+    success = PlaylistCancionesService(db).delete_playlist_canciones_by_playlist_and_cancion(
+        playlist_id,
+        cancion_id,
+        usuario_id,
+    )
+    return {"ok": success}
+
 @router.put("/{playlist_canciones_id}", response_model=PlaylistCancionesResponseDTO)
 def update_playlist_canciones(
     playlist_canciones_id: int,

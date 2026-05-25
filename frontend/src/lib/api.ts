@@ -211,7 +211,8 @@ export const api = {
     obtener: (id: number) => get<Playlist>(`/playlists/${id}`),
     actualizar: (id: number, data: any, usuario_dueno_id?: number) =>
       put<Playlist>(`/playlists/${id}`, data, usuario_dueno_id ? { usuario_dueno_id } : undefined),
-    eliminar: (id: number, usuario_id: number) => del<{ ok: true }>(`/playlists/${id}/usuario/${usuario_id}`),
+    eliminar: (id: number, usuario_id?: number) =>
+      del<{ ok: boolean; message: string }>(`/playlists/${id}`, usuario_id ? { usuario_id } : undefined),
     addColaborador: (playlist_id: number, body: { usuario_id: number; usuario_dueno_id: number }) =>
       post<Playlist>(`/playlists/${playlist_id}/colaboradores`, body),
     removeColaborador: (playlist_id: number, usuario_id: number, usuario_dueno_id?: number) =>
@@ -225,6 +226,8 @@ export const api = {
     listarPorPlaylist: (playlist_id: number) => get<any[]>(`/playlist-canciones/playlist/${playlist_id}`),
     listarTodas: () => get<any[]>(`/playlist-canciones`),
     eliminar: (id: number, usuario_id?: number) => del(`/playlist-canciones/${id}`, usuario_id ? { usuario_id } : undefined),
+    eliminarPorPlaylist: (playlist_id: number, cancion_id: number, usuario_id?: number) =>
+      del<{ ok: true }>(`/playlist-canciones/playlist/${playlist_id}/canciones/${cancion_id}`, usuario_id ? { usuario_id } : undefined),
   },
 
   // Favoritos

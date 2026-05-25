@@ -33,6 +33,20 @@ def get_resumen_playlist(playlist_id: int, db: Session = Depends(get_db)):
 def list_playlists(db: Session = Depends(get_db)):
     return PlaylistController(db).list_all_playlists()
 
+@router.delete("/{playlist_id}", response_model=dict[str, str | bool])
+def delete_playlist_by_id(
+    playlist_id: int,
+    usuario_id: int | None = None,
+    db: Session = Depends(get_db),
+):
+    if usuario_id is None:
+        raise ForbiddenError("Usuario ID requerido para eliminar la playlist")
+    success = PlaylistController(db).delete_playlist(playlist_id, usuario_id)
+    return {
+        "ok": success,
+        "message": "Playlist eliminada correctamente" if success else "Playlist no encontrada",
+    }
+
 @router.get("/{playlist_id}/canciones", response_model=list[PlaylistCancionesResponseDTO])
 def list_playlist_canciones(playlist_id: int, db: Session = Depends(get_db)):
     return PlaylistCancionesService(db).list_playlist_canciones_by_playlist_id(playlist_id)

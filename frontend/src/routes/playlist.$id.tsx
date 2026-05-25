@@ -15,10 +15,8 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   renombrarPlaylist,
-  eliminarPlaylist,
   cambiarVisibilidad,
   cambiarColaborativa,
-  quitarCancion,
 } from "@/lib/playlists.functions";
 import { api } from "@/lib/api";
 
@@ -119,8 +117,9 @@ function formatTotal(seg: number): string {
 
 function PlaylistPage() {
   const { id } = Route.useParams();
-  const userId = useApp((s) => s.user.id);
+  const appUserId = useApp((s) => s.user.id);
   const sessionUser = useSession((s) => s.user);
+  const currentUserId = String(sessionUser?.id ?? appUserId);
   const play = useApp((s) => s.play);
   const navigate = useNavigate();
 
@@ -182,7 +181,9 @@ function PlaylistPage() {
     );
   }
 
-  const isOwner = playlist.playlist.usuario_id === userId;
+  const playlistOwnerId = String(playlist.playlist.usuario_id ?? (playlist.playlist as any).user_id ?? "");
+  const isOwner = String(sessionUser?.id) === playlistOwnerId || String(appUserId) === playlistOwnerId;
+  console.log("Sesión ID:", sessionUser?.id, "Playlist Dueño ID:", playlistOwnerId, "Es dueño:", isOwner);
   const firstAlbum = tracks[0]?.albumes;
   const colors = firstAlbum
     ? (["oklch(0.40 0.15 280)", "oklch(0.20 0.05 280)"] as [string, string])
@@ -208,16 +209,20 @@ function PlaylistPage() {
 
   const handleDelete = async () => {
     if (!confirm("¿Eliminar esta playlist?")) return;
-    const deleteUserId = Number(sessionUser?.id ?? userId);
+    const deleteUserId = Number(sessionUser?.id ?? appUserId);
     if (Number.isNaN(deleteUserId)) {
       setPageError("No estás autenticado correctamente para eliminar esta playlist.");
       return;
     }
 
     try {
-      await eliminarPlaylist({ id: playlist.playlist.id, usuario_id: deleteUserId });
+      const result = await api.playlists.eliminar(playlist.playlist.id, deleteUserId);
+      if (!result?.ok) {
+        throw new Error(result?.message ?? "No se pudo eliminar la playlist");
+      }
       navigate({ to: "/biblioteca" });
     } catch (err) {
+      console.error("Error al eliminar playlist:", err);
       setPageError(err instanceof Error ? err.message : "No se pudo eliminar la playlist");
     }
   };
@@ -256,13 +261,24 @@ function PlaylistPage() {
 
   const handleRemoveTrack = async (cancionId: string) => {
     try {
-      await quitarCancion({ playlist_id: playlist.playlist.id, cancion_id: cancionId });
+      const result = await api.playlistCanciones.eliminarPorPlaylist(
+        playlist.playlist.id,
+        Number(cancionId),
+        Number(sessionUser?.id ?? appUserId)
+      );
+      if (!result?.ok) {
+        throw new Error("No se pudo eliminar la canción de la playlist");
+      }
       setPlaylist((prev) =>
         prev
-          ? { ...prev, tracks: prev.tracks.filter((track) => track.cancion_id !== cancionId) }
+          ? {
+              ...prev,
+              tracks: prev.tracks.filter((track) => String(track.cancion_id) !== cancionId),
+            }
           : prev
       );
     } catch (err) {
+      console.error("Error al quitar canción de playlist:", err);
       setPageError(err instanceof Error ? err.message : "No se pudo quitar la canción");
     }
   };
@@ -308,6 +324,14 @@ function PlaylistPage() {
             <Play className="w-4 h-4 fill-current" /> Reproducir
           </button>
           {isOwner && (
+            <button
+              onClick={handleDelete}
+              className="flex items-center gap-2 px-4 py-2 rounded-full text-sm text-destructive border border-destructive/20 hover:bg-destructive/10"
+            >
+              <Trash2 className="w-4 h-4" /> Eliminar Playlist
+            </button>
+          )}
+          {isOwner && (
             <>
               <button
                 onClick={() => {
@@ -331,12 +355,6 @@ function PlaylistPage() {
               >
                 <Users className="w-4 h-4" />
                 {playlist.playlist.colaborativa ? "Quitar colaborativa" : "Hacer colaborativa"}
-              </button>
-              <button
-                onClick={handleDelete}
-                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm text-destructive hover:bg-destructive/10"
-              >
-                <Trash2 className="w-4 h-4" /> Eliminar
               </button>
             </>
           )}
@@ -362,7 +380,8 @@ function PlaylistPage() {
                   genero_musical: c.albumes.artistas.genero_musical,
                 }}
                 index={i + 1}
-                onRemove={isOwner ? () => handleRemoveTrack(c.id) : undefined}
+                onRemove={isOwner ? () => handleRemoveTrack(String(c.id)) : undefined}
+                showDelete={isOwner}
                 removeLabel="Quitar de la playlist"
               />
             ))}
