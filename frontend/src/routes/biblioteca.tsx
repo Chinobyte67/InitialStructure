@@ -49,7 +49,7 @@ function BibliotecaPage() {
           </div>
           <div>
             <div className="font-semibold">Canciones favoritas</div>
-            <div className="text-xs text-muted-foreground">{favoritos} canciones</div>
+            <div className="text-xs text-muted-foreground">{favoritos.length} canciones</div>
           </div>
         </Link>
         <Link
@@ -100,15 +100,6 @@ function BibliotecaPage() {
               </Link>
             ))}
           </div>
-        )}
-      </section>
-
-      <section>
-        <h2 className="text-lg font-semibold mb-4">Artistas que seguís</h2>
-        {seguidos === 0 ? (
-          <p className="text-sm text-muted-foreground">Todavía no seguís a nadie.</p>
-        ) : (
-          <p className="text-sm text-muted-foreground">Seguís {seguidos} artistas.</p>
         )}
       </section>
     </div>
