@@ -34,6 +34,7 @@ class UserService:
             email=dto.email,
             password_hash=password_hash,
             nombre=getattr(dto, 'nombre', None),
+            plan=dto.plan,
         )
         return to_user_response(user)
 

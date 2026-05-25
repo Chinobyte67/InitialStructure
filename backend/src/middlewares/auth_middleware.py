@@ -2,16 +2,17 @@ from fastapi import Depends, Header
 from sqlalchemy.orm import Session
 
 from src.db.connection import get_db
-from src.db.models.usuario_model import User
 from src.repositories.user_repository import UserRepository
 from src.utils.errors import UnauthorizedError
 from src.utils.jwt import decode_token
+from src.mappers.user_mapper import to_user_response
+from src.dtos.user_dto import UserResponseDTO
 
 
 def get_current_user(
     authorization: str | None = Header(default=None),
     db: Session = Depends(get_db),
-) -> User:
+) -> UserResponseDTO:
     if not authorization or not authorization.lower().startswith("bearer "):
         raise UnauthorizedError("Missing or malformed Authorization header")
 
@@ -26,4 +27,4 @@ def get_current_user(
     if user is None:
         raise UnauthorizedError("User no longer exists")
 
-    return user
+    return to_user_response(user)

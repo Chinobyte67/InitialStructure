@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from src.dtos.playlist_canciones_dto import PlaylistCancionesResponseDTO
 
 #(id, nombre, usuario_id, fecha_creacion, es_publica)
 
@@ -19,6 +20,8 @@ class PlaylistResponseDTO(BaseModel):
     es_publica: int
     colaborativa: int
     colaboradores: list[int] = []
+    canciones: list[PlaylistCancionesResponseDTO] = []
+    canciones: list[dict] = []
 
 class PlaylistResumenDTO(BaseModel):
     id: int

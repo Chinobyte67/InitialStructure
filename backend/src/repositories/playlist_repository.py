@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from ..db.models.playlist_model import Playlist
 from ..dtos.playlist_dto import CreatePlaylistDTO, PlaylistResponseDTO
 from ..mappers.playlist_mapper import to_playlist_response
+from ..repositories.playlist_canciones_repository import PlaylistCancionesRepository
 from ..repositories.playlist_colaboradores_repository import PlaylistColaboradoresRepository
 from ..repositories.user_repository import UserRepository
 from ..utils.errors import ConflictError, ForbiddenError, NotFoundError
@@ -13,6 +14,10 @@ class PlaylistRepository:
     def __init__(self, db: Session):
         self.db = db
         self.playlist_colaboradores_repository = PlaylistColaboradoresRepository(db)
+        self.playlist_canciones_repository = PlaylistCancionesRepository(db)
+
+    def _get_playlist_canciones(self, playlist_id: int):
+        return self.playlist_canciones_repository.list_by_playlist(playlist_id)
 
     def _playlist_name_exists_for_user(self, usuario_id: int, nombre: str, exclude_id: int | None = None) -> bool:
         query = self.db.query(Playlist).filter(
@@ -40,13 +45,21 @@ class PlaylistRepository:
         self.db.add(playlist)
         self.db.commit()
         self.db.refresh(playlist)
-        return to_playlist_response(playlist, self.playlist_colaboradores_repository.list_collaborators(playlist.id))
+        return to_playlist_response(
+            playlist,
+            self.playlist_colaboradores_repository.list_collaborators(playlist.id),
+            self._get_playlist_canciones(playlist.id),
+        )
 
     def find_by_id(self, playlist_id: int) -> PlaylistResponseDTO | None:
         playlist = self.db.query(Playlist).filter(Playlist.id == playlist_id).first()
         if not playlist:
             return None
-        return to_playlist_response(playlist, self.playlist_colaboradores_repository.list_collaborators(playlist.id))
+        return to_playlist_response(
+            playlist,
+            self.playlist_colaboradores_repository.list_collaborators(playlist.id),
+            self._get_playlist_canciones(playlist.id),
+        )
     
     def update(self, playlist_id: int, updated_data: dict | CreatePlaylistDTO) -> PlaylistResponseDTO | None:
         if hasattr(updated_data, "model_dump"):

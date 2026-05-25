@@ -75,10 +75,8 @@ def update_playlist(
     usuario_dueno_id: int,
     db: Session = Depends(get_db),
 ):
-    dto = CreatePlaylistDTO(**payload.model_dump())
+    dto = UpdatePlaylistDTO(**payload.model_dump())
     playlist = PlaylistController(db).get_playlist_by_id(playlist_id)
-    if not playlist:
-        return None
     if playlist.usuario_id != usuario_dueno_id:
         raise ForbiddenError("Solo el dueño puede renombrar o actualizar la playlist")
     return PlaylistController(db).update_playlist(playlist_id, dto)
@@ -93,10 +91,8 @@ def partial_update_playlist(
     if payload is None:
         return PlaylistController(db).get_playlist_by_id(playlist_id)
 
-    dto = CreatePlaylistDTO(**payload.model_dump())
+    dto = UpdatePlaylistDTO(**payload.model_dump())
     playlist = PlaylistController(db).get_playlist_by_id(playlist_id)
-    if not playlist:
-        return None
     if usuario_dueno_id is not None and playlist.usuario_id != usuario_dueno_id:
         raise ForbiddenError("Solo el dueño puede renombrar o actualizar la playlist")
     return PlaylistController(db).update_playlist(playlist_id, dto)

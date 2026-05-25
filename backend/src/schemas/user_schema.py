@@ -15,6 +15,13 @@ class CreateUserSchema(BaseModel):
             raise ValueError('Password must not exceed 72 bytes when encoded')
         return v
 
+    @field_validator('plan', mode='after')
+    @classmethod
+    def validate_plan(cls, v):
+        if v not in {"free", "premium", "familiar"}:
+            raise ValueError('Plan must be one of: free, premium, familiar')
+        return v
+
 class UpdateUserSchema(BaseModel):
     email: EmailStr | None = None
     password: str | None = None
@@ -30,5 +37,14 @@ class UpdateUserSchema(BaseModel):
             raise ValueError('Password must be at least 8 characters')
         if len(v.encode('utf-8')) > 72:
             raise ValueError('Password must not exceed 72 bytes when encoded')
+        return v
+
+    @field_validator('plan', mode='after')
+    @classmethod
+    def validate_plan(cls, v):
+        if v is None:
+            return v
+        if v not in {"free", "premium", "familiar"}:
+            raise ValueError('Plan must be one of: free, premium, familiar')
         return v
 

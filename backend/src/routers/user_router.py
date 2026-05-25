@@ -10,7 +10,7 @@ from src.services.user_service import UserService
 from src.services.favoritos_service import FavoritosService
 from src.dtos.cancion_dto import CancionResponseDTO
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 
 
 @router.post("/", response_model=UserResponseDTO, status_code=status.HTTP_201_CREATED)
@@ -37,28 +37,19 @@ def list_seguidos(user_id: int, db: Session = Depends(get_db)):
 
 @router.get("/{user_id}/favoritos", response_model=list[CancionResponseDTO])
 def list_favoritos_usuario(user_id: int, db: Session = Depends(get_db)):
-    canciones = FavoritosService(db).list_favoritos_por_usuario(user_id)
-    if not canciones:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El usuario no tiene favoritos")
-    return canciones
+    return FavoritosService(db).list_favoritos_por_usuario(user_id)
 
 
 @router.get("/{user_id}/top-canciones", response_model=list[CancionResponseDTO])
 def get_top_canciones_usuario(user_id: int, db: Session = Depends(get_db)):
     """Retorna las 10 canciones más escuchadas por el usuario (solo con reproducciones válidas)."""
-    canciones = UserService(db).get_top_canciones_por_usuario(user_id)
-    if not canciones:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El usuario no tiene canciones escuchadas")
-    return canciones
+    return UserService(db).get_top_canciones_por_usuario(user_id)
 
 
 @router.get("/{user_id}/top-artistas", response_model=list[ArtistaResponseDTO])
 def get_top_artistas_usuario(user_id: int, db: Session = Depends(get_db)):
     """Retorna los 10 artistas más escuchados por el usuario (solo con reproducciones válidas)."""
-    artistas = UserService(db).get_top_artistas_por_usuario(user_id)
-    if not artistas:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El usuario no tiene artistas escuchados")
-    return artistas
+    return UserService(db).get_top_artistas_por_usuario(user_id)
 
 
 @router.get("/{user_id}/resumen", response_model=UsuarioResumenAnualDTO)

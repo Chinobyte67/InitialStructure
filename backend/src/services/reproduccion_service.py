@@ -3,8 +3,7 @@ from sqlalchemy.orm import Session
 from ..dtos.reproduccion_dto import ReproduccionResponseDTO
 from ..repositories.reproduccion_repository import ReproduccionRepository
 from ..repositories.cancion_repository import CancionRepository
-from fastapi import HTTPException, status
-from ..utils.errors import NotFoundError
+from ..utils.errors import NotFoundError, BadRequestError
 
 from ..dtos.reproduccion_dto import CreateReproduccionDTO
 
@@ -27,7 +26,7 @@ class ReproduccionController:
 
         duracion = cancion.duracion_seg
         if reproduccion_dto.segundos_escuchados > duracion:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="segundos_escuchados no puede superar la duracion de la cancion")
+            raise BadRequestError("segundos_escuchados no puede superar la duracion de la cancion")
 
         # Determine whether it counts for stats (>= 30% of duration)
         cuenta_flag = reproduccion_dto.segundos_escuchados >= (0.3 * duracion)

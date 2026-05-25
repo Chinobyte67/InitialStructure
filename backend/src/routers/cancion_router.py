@@ -4,7 +4,7 @@
 # router = APIRouter(prefix="/products", tags=["products"])
 # ...
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 
 from src.db.connection import get_db
@@ -60,7 +60,7 @@ def get_estadisticas_cancion_endpoint(cancion_id: int, anio_inicio: int | None =
 def get_cancion_endpoint(cancion_id: int, db: Session = Depends(get_db)):
     cancion = get_cancion(cancion_id, db)
     if not cancion:
-        return {"error": "Canción no encontrada"}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canción no encontrada")
     return cancion
 
 
@@ -68,7 +68,7 @@ def get_cancion_endpoint(cancion_id: int, db: Session = Depends(get_db)):
 def update_cancion_endpoint(cancion_id: int, payload: CreateCancionSchema, db: Session = Depends(get_db)):
     cancion = get_cancion(cancion_id, db)
     if not cancion:
-        return {"error": "Canción no encontrada"}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canción no encontrada")
     return update_cancion(cancion_id, payload, db)
 
 
@@ -76,5 +76,5 @@ def update_cancion_endpoint(cancion_id: int, payload: CreateCancionSchema, db: S
 def delete_cancion_endpoint(cancion_id: int, db: Session = Depends(get_db)):
     cancion = get_cancion(cancion_id, db)
     if not cancion:
-        return {"error": "Canción no encontrada"}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canción no encontrada")
     delete_cancion(cancion_id, db)

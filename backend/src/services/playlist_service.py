@@ -15,8 +15,11 @@ class PlaylistController:
     def create_playlist(self, playlist_dto: CreatePlaylistDTO) -> PlaylistResponseDTO:
         return self.playlist_repository.create(playlist_dto)
 
-    def get_playlist_by_id(self, playlist_id: int) -> PlaylistResponseDTO | None:
-        return self.playlist_repository.find_by_id(playlist_id)
+    def get_playlist_by_id(self, playlist_id: int) -> PlaylistResponseDTO:
+        playlist = self.playlist_repository.find_by_id(playlist_id)
+        if not playlist:
+            raise NotFoundError("Playlist not found")
+        return playlist
 
     def list_all_playlists(self) -> list[PlaylistResponseDTO]:
         return self.playlist_repository.list_all()

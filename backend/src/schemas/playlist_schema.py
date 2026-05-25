@@ -9,7 +9,6 @@ class CreatePlaylistSchema(BaseModel):
     colaborativa: int | None = None
 
 class UpdatePlaylistSchema(BaseModel):
-    id: int
     nombre: str | None = None
     descripcion: str | None = None
     imagen_url: str | None = None
