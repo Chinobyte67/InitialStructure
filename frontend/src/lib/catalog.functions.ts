@@ -36,10 +36,16 @@ export const crearCancion = createServerFn({ method: "POST" })
       titulo: z.string().trim().min(1).max(200),
       duracion_seg: z.number().int().positive().max(7200),
       album_id: z.number().int(),
+      url_audio: z.string().trim().url().optional(),
     }).parse(i)
   )
   .handler(async ({ data }) => {
-    const row = await api.canciones.crear({ titulo: data.titulo, duracion_seg: data.duracion_seg, album_id: data.album_id });
+    const row = await api.canciones.crear({
+      titulo: data.titulo,
+      duracion_seg: data.duracion_seg,
+      album_id: data.album_id,
+      url_audio: data.url_audio,
+    });
     return row;
   });
 
