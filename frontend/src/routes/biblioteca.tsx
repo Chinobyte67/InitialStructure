@@ -25,12 +25,12 @@ export const Route = createFileRoute("/biblioteca")({
 function BibliotecaPage() {
   const favoritos = useApp((s) => s.favoritos);
   const seguidos = useApp((s) => s.seguidos);
-  const [playlists, setPlaylists] = useState<{ id: string; nombre: string; es_publica: boolean }[]>([]);
+  const [playlists, setPlaylists] = useState<{ id: number; nombre: string; es_publica: boolean }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     listarPlaylists()
-      .then((data) => setPlaylists(data))
+      .then((data) => setPlaylists(data ?? []))
       .catch(() => setPlaylists([]))
       .finally(() => setLoading(false));
   }, []);

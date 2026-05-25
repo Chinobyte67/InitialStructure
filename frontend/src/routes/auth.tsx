@@ -3,8 +3,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { api, ApiError, type Plan } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { useSession } from "@/store/session";
 
 export const Route = createFileRoute("/auth")({
@@ -21,8 +20,8 @@ function AuthPage() {
 
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
-  const [nombre, setNombre] = useState("");
-  const [plan, setPlan] = useState<Plan>("free");
+  const [password, setPassword] = useState("");
+  const [age, setAge] = useState<number | "">(18);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -36,14 +35,17 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
+        if (!password) throw new Error("Ingresá una contraseña.");
+        if (age === "" || Number.isNaN(Number(age))) throw new Error("Ingresá una edad válida.");
+
         const u = await api.usuarios.crear({
           email: email.trim(),
-          nombre: nombre.trim() || email.split("@")[0],
-          plan,
+          password,
+          age: Number(age),
         });
         setUser(u);
       } else {
-        // Sin auth: buscamos por email entre los usuarios existentes.
+        // Sin auth completo aún: buscamos por email entre los usuarios existentes.
         const lista = await api.usuarios.listar();
         const u = lista.find((x) => x.email.toLowerCase() === email.trim().toLowerCase());
         if (!u) throw new Error("No existe ningún usuario con ese email.");
@@ -66,29 +68,33 @@ function AuthPage() {
           {mode === "signup" ? "Creá tu cuenta" : "Bienvenido de nuevo"}
         </p>
         <form onSubmit={submit} className="space-y-4">
-          {mode === "signup" && (
-            <>
-              <div>
-                <Label htmlFor="nombre">Nombre</Label>
-                <Input id="nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={80} />
-              </div>
-              <div>
-                <Label>Plan</Label>
-                <Select value={plan} onValueChange={(v) => setPlan(v as Plan)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="free">Free</SelectItem>
-                    <SelectItem value="premium">Premium</SelectItem>
-                    <SelectItem value="familiar">Familiar</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </>
-          )}
           <div>
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
+          <div>
+            <Label htmlFor="password">Contraseña</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          {mode === "signup" && (
+            <div>
+              <Label htmlFor="age">Edad</Label>
+              <Input
+                id="age"
+                type="number"
+                min={1}
+                value={age}
+                onChange={(e) => setAge(e.target.value === "" ? "" : Number(e.target.value))}
+                required
+              />
+            </div>
+          )}
           {err && <p className="text-sm text-destructive">{err}</p>}
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? "..." : mode === "signup" ? "Registrarme" : "Entrar"}

@@ -17,7 +17,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "@/store/session";
 import { crearPlaylist, listarPlaylists } from "@/lib/playlists.functions";
 
-type PlaylistItem = { id: string; nombre: string };
+type PlaylistItem = { id: number; nombre: string };
 
 const mainNav = [
   { to: "/", label: "Inicio", icon: Home },
@@ -48,7 +48,7 @@ export function Sidebar() {
     listarPlaylists()
       .then((data) => {
         if (!active) return;
-        setPlaylists(data);
+        setPlaylists(data ?? []);
       })
       .catch(() => {
         if (!active) return;
@@ -62,8 +62,24 @@ export function Sidebar() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!sessionUser?.id) {
+      setError("Debes iniciar sesión para crear una playlist.");
+      return;
+    }
+
     try {
-      const result = await crearPlaylist({ nombre: name, es_publica: false, colaborativa: false });
+      const result = await crearPlaylist({
+        nombre: name,
+        es_publica: false,
+        colaborativa: false,
+        usuario_id: sessionUser.id,
+      });
+
+      if (!result || typeof result.id !== "number") {
+        throw new Error("No se pudo crear la playlist. Intenta de nuevo.");
+      }
+
       setPlaylists((current) => [result, ...current]);
       setName("");
       setCreating(false);
