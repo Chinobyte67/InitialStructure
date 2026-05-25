@@ -3,10 +3,12 @@ from sqlalchemy.orm import Session
 
 from src.db.connection import get_db
 from src.dtos.album_dto import CreateAlbumDTO, UpdateAlbumDTO, AlbumResponseDTO
+from src.dtos.cancion_dto import CancionResponseDTO
 from src.schemas.album_schema import CreateAlbumSchema, UpdateAlbumSchema
 from src.services.album_service import AlbumService
+from src.services.cancion_service import CancionService
 
-router = APIRouter(prefix="/albums", tags=["albums"])
+router = APIRouter(prefix="/albumes", tags=["albumes"])
 
 @router.post("/", response_model=AlbumResponseDTO)
 def create_album(payload: CreateAlbumSchema, db: Session = Depends(get_db)):
@@ -34,6 +36,12 @@ def delete_album(album_id: int, db: Session = Depends(get_db)):
     if not success:
         raise HTTPException(status_code=404, detail="Album no encontrado")
     
+
+@router.get("/{album_id}/canciones", response_model=list[CancionResponseDTO])
+def list_album_canciones(album_id: int, db: Session = Depends(get_db)):
+    return CancionService(db).list_canciones(album_id)
+
+
 @router.get("/", response_model=list[AlbumResponseDTO])
 def list_albums(db: Session = Depends(get_db), artista_id: int | None = None):
     return AlbumService(db).list_albums(artista_id)

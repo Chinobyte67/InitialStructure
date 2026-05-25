@@ -2,12 +2,17 @@ from sqlalchemy.orm import Session
 
 from ..dtos.album_dto import CreateAlbumDTO, UpdateAlbumDTO, AlbumResponseDTO
 from ..repositories.album_repository import AlbumRepository
+from ..repositories.artista_repository import ArtistaRepository
+from ..utils.errors import NotFoundError
 
 class AlbumService:
     def __init__(self, db: Session):
         self.album_repo = AlbumRepository(db)
+        self.artista_repo = ArtistaRepository(db)
 
     def create_album(self, album_dto: CreateAlbumDTO) -> AlbumResponseDTO:
+        if not self.artista_repo.find_by_id(album_dto.artista_id):
+            raise NotFoundError("Artista no encontrado")
         return self.album_repo.create(album_dto)
 
     def get_album_by_id(self, album_id: int) -> AlbumResponseDTO | None:
