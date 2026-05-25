@@ -38,17 +38,24 @@ def delete_cancion(cancion_id: int, db: Session = Depends(get_db)):
     CancionService(db).delete_cancion(cancion_id)
 
 
+@router.get("/", response_model=list[CancionResponseDTO])
+def list_canciones_endpoint(db: Session = Depends(get_db), album_id: int | None = None):
+    """Retorna todas las canciones o filtra por album_id si se provee."""
+    return list_canciones(db, album_id)
+
+
+@router.get("/all", response_model=list[CancionResponseDTO])
+def list_all_canciones_endpoint(db: Session = Depends(get_db)):
+    """Retorna todas las canciones sin filtrar."""
+    return CancionService(db).list_canciones()
+
+
 @router.get("/{cancion_id}", response_model=CancionResponseDTO)
 def get_cancion_endpoint(cancion_id: int, db: Session = Depends(get_db)):
     cancion = get_cancion(cancion_id, db)
     if not cancion:
         return {"error": "Canción no encontrada"}
     return cancion
-
-
-@router.get("/", response_model=list[CancionResponseDTO])
-def list_canciones_endpoint(db: Session = Depends(get_db), album_id: int | None = None):
-    return list_canciones(db, album_id)
 
 
 @router.put("/{cancion_id}", response_model=CancionResponseDTO)

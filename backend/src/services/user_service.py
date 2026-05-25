@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, and_
+from datetime import datetime, timedelta
 
 from src.dtos.user_dto import CreateUserDTO, UserResponseDTO
 from src.mappers.user_mapper import to_user_response
@@ -125,3 +126,94 @@ class UserService:
         
         # Convertir a DTOs
         return [to_artista_response(artista) for artista, cantidad in resultado]
+
+    def get_recomendaciones(self, usuario_id: int, limit: int = 10) -> list:
+        """
+        Retorna recomendaciones basadas en géneros más escuchados por el usuario.
+        
+        - Si el usuario tiene >= 5 reproducciones válidas: recomienda canciones de sus géneros más escuchados
+        - Si el usuario tiene < 5 reproducciones válidas: retorna canciones del top global
+        - Excluye canciones que el usuario ha escuchado en los últimos 30 días
+        """
+        # Verificar que el usuario existe
+        user = self.repo.find_by_id(usuario_id)
+        if not user:
+            raise NotFoundError("User not found")
+        
+        # Contar reproducciones válidas del usuario
+        valid_plays = self.db.query(func.count(Reproduccion.id)).filter(
+            Reproduccion.usuario_id == usuario_id,
+            Reproduccion.cuenta_para_estadisticas == True
+        ).scalar()
+        
+        # Calcular fecha límite (hace 30 días)
+        thirty_days_ago = datetime.now() - timedelta(days=30)
+        
+        # Si el usuario tiene menos de 5 reproducciones válidas, devolver top global
+        if valid_plays < 5:
+            resultado = (
+                self.db.query(Cancion)
+                .join(Reproduccion, Cancion.id == Reproduccion.cancion_id)
+                .filter(Reproduccion.cuenta_para_estadisticas == True)
+                .group_by(Cancion.id)
+                .order_by(func.count(Reproduccion.id).desc())
+                .limit(limit)
+                .all()
+            )
+            return [to_cancion_response(cancion) for cancion in resultado]
+        
+        # Obtener los géneros más escuchados por el usuario
+        top_generos = (
+            self.db.query(Artista.genero_musical)
+            .join(Album, Album.artista_id == Artista.id)
+            .join(Cancion, Cancion.album_id == Album.id)
+            .join(Reproduccion, Reproduccion.cancion_id == Cancion.id)
+            .filter(
+                Reproduccion.usuario_id == usuario_id,
+                Reproduccion.cuenta_para_estadisticas == True
+            )
+            .group_by(Artista.genero_musical)
+            .order_by(func.count(Reproduccion.id).desc())
+            .limit(5)
+            .all()
+        )
+        
+        # Extraer los géneros
+        generos = [g[0] for g in top_generos]
+        
+        # Si no hay géneros, devolver top global
+        if not generos:
+            resultado = (
+                self.db.query(Cancion)
+                .join(Reproduccion, Cancion.id == Reproduccion.cancion_id)
+                .filter(Reproduccion.cuenta_para_estadisticas == True)
+                .group_by(Cancion.id)
+                .order_by(func.count(Reproduccion.id).desc())
+                .limit(limit)
+                .all()
+            )
+            return [to_cancion_response(cancion) for cancion in resultado]
+        
+        # Obtener canciones de los géneros más escuchados que el usuario NO ha escuchado en 30 días
+        resultado = (
+            self.db.query(Cancion)
+            .join(Album, Album.id == Cancion.album_id)
+            .join(Artista, Artista.id == Album.artista_id)
+            .outerjoin(
+                Reproduccion,
+                and_(
+                    Reproduccion.cancion_id == Cancion.id,
+                    Reproduccion.usuario_id == usuario_id,
+                    Reproduccion.fecha >= thirty_days_ago
+                )
+            )
+            .filter(
+                Artista.genero_musical.in_(generos),
+                Reproduccion.id == None  # Excluir canciones escuchadas en los últimos 30 días
+            )
+            .order_by(func.random())
+            .limit(limit)
+            .all()
+        )
+        
+        return [to_cancion_response(cancion) for cancion in resultado]

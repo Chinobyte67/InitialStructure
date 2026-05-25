@@ -30,10 +30,7 @@ class ReproduccionController:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="segundos_escuchados no puede superar la duracion de la cancion")
 
         # Determine whether it counts for stats (>= 30% of duration)
-        counts = reproduccion_dto.segundos_escuchados >= (0.3 * duracion)
-
-        # If DTO doesn't include cuenta flag, set it
-        cuenta_flag = reproduccion_dto.cuenta_para_estadisticas if reproduccion_dto.cuenta_para_estadisticas is not None else counts
+        cuenta_flag = reproduccion_dto.segundos_escuchados >= (0.3 * duracion)
 
         return self.reproduccion_repository.create(
             usuario_id=reproduccion_dto.usuario_id,

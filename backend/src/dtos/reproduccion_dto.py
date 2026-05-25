@@ -19,4 +19,3 @@ class CreateReproduccionDTO(BaseModel):
     usuario_id: int
     cancion_id: int
     segundos_escuchados: int
-    cuenta_para_estadisticas: bool | None = None

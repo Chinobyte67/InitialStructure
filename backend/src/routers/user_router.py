@@ -61,6 +61,20 @@ def get_top_artistas_usuario(user_id: int, db: Session = Depends(get_db)):
     return artistas
 
 
+@router.get("/{user_id}/recomendaciones", response_model=list[CancionResponseDTO])
+def get_recomendaciones_usuario(user_id: int, db: Session = Depends(get_db)):
+    """
+    Retorna recomendaciones de canciones basadas en géneros más escuchados.
+    - Si el usuario tiene < 5 reproducciones válidas, devuelve canciones del top global.
+    - Si el usuario tiene >= 5 reproducciones válidas, devuelve canciones de sus géneros más escuchados.
+    - Excluye canciones que el usuario ha escuchado en los últimos 30 días.
+    """
+    recomendaciones = UserService(db).get_recomendaciones(user_id)
+    if not recomendaciones:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No hay recomendaciones disponibles para este usuario")
+    return recomendaciones
+
+
 @router.delete("/{user_id}/favoritos/{cancion_id}", status_code=204)
 def delete_favorito_usuario(user_id: int, cancion_id: int, db: Session = Depends(get_db)):
     success = FavoritosService(db).delete_favorito_por_usuario_cancion(user_id, cancion_id)

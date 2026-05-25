@@ -57,7 +57,7 @@ CREATE TABLE Reproduccion (
     cancion_id INTEGER REFERENCES Cancion(id),
     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     segundos_escuchados INTEGER,
-    cuenta_para_estadisticas BOOLEAN DEFAULT FALSE
+    cuenta_para_estadisticas BOOLEAN DEFAULT TRUE
 );
 
 --- Tablas de Relación N a M ---
@@ -137,11 +137,11 @@ INSERT INTO playlist_canciones (playlist_id, cancion_id, orden, fecha_agregada) 
 (2, 6, 2, '2024-03-05');
 
 -- Insertar Reproducciones
-INSERT INTO Reproduccion (usuario_id, cancion_id, fecha, segundos_escuchados) VALUES
-(2, 1, '2026-05-15 10:00:00', 180),
-(2, 2, '2026-05-15 10:05:00', 200),
-(3, 5, '2026-05-15 11:00:00', 250),
-(3, 6, '2026-05-15 11:10:00', 240);
+INSERT INTO Reproduccion (usuario_id, cancion_id, fecha, segundos_escuchados, cuenta_para_estadisticas) VALUES
+(2, 1, '2026-05-15 10:00:00', 180, TRUE),
+(2, 2, '2026-05-15 10:05:00', 200, TRUE),
+(3, 5, '2026-05-15 11:00:00', 250, TRUE),
+(3, 6, '2026-05-15 11:10:00', 240, TRUE);
 
 -- Insertar Favoritos
 INSERT INTO favoritos (usuario_id, cancion_id) VALUES
@@ -166,3 +166,45 @@ UPDATE reproduccion r
 SET cuenta_para_estadisticas = (r.segundos_escuchados >= (0.3 * c.duracion_seg))
 FROM cancion c
 WHERE r.cancion_id = c.id;
+
+
+-- Asegurarte de tener el artista y álbum creados
+INSERT INTO Artista (nombre, pais, genero_musical) VALUES
+('Chet Baker', 'EEUU', 'Jazz');
+
+-- El id de este artista será 6 si seguiste la secuencia
+INSERT INTO Album (titulo, anio, artista_id) VALUES
+('Chet Baker Sings', 1954, 6);
+
+-- Canciones nuevas de Jazz (se crearán con id 11 y 12)
+INSERT INTO Cancion (titulo, duracion_seg, album_id, url_audio) VALUES
+('My Funny Valentine', 270, 6, 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3'),
+('Let’s Get Lost', 250, 6, 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3');
+
+-- Más reproducciones de Jazz para Ana (usuario_id = 2)
+INSERT INTO Reproduccion (usuario_id, cancion_id, fecha, segundos_escuchados, cuenta_para_estadisticas) VALUES
+(2, 1, '2026-05-10 09:00:00', 180, TRUE),  -- Lover Girl (Jazz)
+(2, 2, '2026-05-11 09:15:00', 200, TRUE),  -- From the Start (Jazz)
+(2, 11, '2026-05-20 09:00:00', 200, TRUE), -- My Funny Valentine (Jazz)
+(2, 12, '2026-05-21 09:15:00', 220, TRUE), -- Let’s Get Lost (Jazz)
+(2, 11, '2026-05-22 10:00:00', 250, TRUE), -- My Funny Valentine (Jazz, otra vez)
+(2, 12, '2026-05-23 11:00:00', 230, TRUE); -- Let’s Get Lost (Jazz, otra vez)
+
+-- Nuevo Artista de Jazz
+INSERT INTO Artista (nombre, pais, genero_musical) VALUES
+('Chet Baker', 'EEUU', 'Jazz');
+
+-- Nuevo Álbum de Jazz
+INSERT INTO Album (titulo, anio, artista_id) VALUES
+('Chet Baker Sings', 1954, 6);
+
+-- Nuevas Canciones de Jazz
+INSERT INTO Cancion (titulo, duracion_seg, album_id, url_audio) VALUES
+('My Funny Valentine', 270, 6, 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3'),
+('Let’s Get Lost', 250, 6, 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3');
+
+-- Reproducciones de las nuevas canciones de Jazz
+INSERT INTO Reproduccion (usuario_id, cancion_id, fecha, segundos_escuchados, cuenta_para_estadisticas) VALUES
+(2, 11, '2026-05-20 09:00:00', 200, TRUE), -- Ana escucha My Funny Valentine
+(2, 12, '2026-05-21 09:15:00', 220, TRUE), -- Ana escucha Let’s Get Lost
+(3, 11, '2026-05-22 10:00:00', 250, TRUE); -- Juan escucha My Funny Valentine
