@@ -4,13 +4,14 @@
 # router = APIRouter(prefix="/products", tags=["products"])
 # ...
 
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 
 from src.db.connection import get_db
 from src.dtos.cancion_dto import CreateCancionDTO, CancionResponseDTO, CancionEstadisticasDTO
 from src.schemas.cancion_schema import CreateCancionSchema
 from src.services.cancion_service import CancionService
+from src.utils.cloudinary import upload_audio_to_cloudinary
 
 router = APIRouter(prefix="/canciones", tags=["canciones"])
 
@@ -18,6 +19,30 @@ router = APIRouter(prefix="/canciones", tags=["canciones"])
 @router.post("/", response_model=CancionResponseDTO, status_code=status.HTTP_201_CREATED)
 def create_cancion(payload: CreateCancionSchema, db: Session = Depends(get_db)):
     dto = CreateCancionDTO(**payload.model_dump())
+    return CancionService(db).create_cancion(dto)
+
+
+@router.post("/upload", response_model=CancionResponseDTO, status_code=status.HTTP_201_CREATED)
+def upload_cancion(
+    titulo: str = Form(...),
+    album_id: int = Form(...),
+    audio_file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    if audio_file.content_type and not audio_file.content_type.startswith("audio/"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El archivo debe ser de audio.")
+
+    try:
+        url_audio, duracion_seg = upload_audio_to_cloudinary(audio_file.file)
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al subir el audio: {exc}") from exc
+
+    dto = CreateCancionDTO(
+        titulo=titulo,
+        album_id=album_id,
+        duracion_seg=duracion_seg,
+        url_audio=url_audio,
+    )
     return CancionService(db).create_cancion(dto)
 
 
