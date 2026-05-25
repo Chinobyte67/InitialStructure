@@ -15,10 +15,11 @@ import {
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { useSession } from "@/store/session";
+import { useApp } from "@/store/app";
 import { api } from "@/lib/api";
 import { listarPlaylists } from "@/lib/playlists.functions";
 
-type PlaylistItem = { id: number; nombre: string };
+type PlaylistItem = { id: string | number; nombre: string };
 
 const mainNav = [
   { to: "/", label: "Inicio", icon: Home },
@@ -35,9 +36,11 @@ const libraryNav = [
 
 export function Sidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [playlists, setPlaylists] = useState<PlaylistItem[]>([]);
+  const playlists = useApp((s) => s.playlists);
+  const setPlaylists = useApp((s) => s.setPlaylists);
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const sessionUser = useSession((s) => s.user);
@@ -54,11 +57,15 @@ export function Sidebar() {
       .catch(() => {
         if (!active) return;
         setPlaylists([]);
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoading(false);
       });
     return () => {
       active = false;
     };
-  }, []);
+  }, [setPlaylists]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +88,7 @@ export function Sidebar() {
         throw new Error("No se pudo crear la playlist. Intenta de nuevo.");
       }
 
-      setPlaylists((current) => [result, ...current]);
+      setPlaylists([result, ...playlists]);
       setName("");
       setCreating(false);
       navigate({ to: "/playlist/$id", params: { id: String(result.id) } });
@@ -179,27 +186,30 @@ export function Sidebar() {
         )}
 
         <div className="flex-1 overflow-y-auto space-y-0.5 pb-4">
-          {playlists.map((p) => {
-            const active = pathname === `/playlist/${p.id}`;
-            return (
-              <Link
-                key={p.id}
-                to="/playlist/$id"
-                params={{ id: p.id }}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-                  active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-deboss"
-                    : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                )}
-              >
-                <ListMusic className="w-4 h-4 shrink-0" />
-                <span className="truncate">{p.nombre}</span>
-              </Link>
-            );
-          })}
-          {playlists.length === 0 && (
+          {loading ? (
+            <p className="px-3 text-xs text-muted-foreground">Cargando playlists...</p>
+          ) : playlists.length === 0 ? (
             <p className="px-3 text-xs text-muted-foreground">Aún no tenés playlists.</p>
+          ) : (
+            playlists.map((p) => {
+              const active = pathname === `/playlist/${p.id}`;
+              return (
+                <Link
+                  key={p.id}
+                  to="/playlist/$id"
+                  params={{ id: p.id }}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                    active
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-deboss"
+                      : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                  )}
+                >
+                  <ListMusic className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{p.nombre}</span>
+                </Link>
+              );
+            })
           )}
         </div>
       </div>

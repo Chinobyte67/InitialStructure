@@ -121,6 +121,7 @@ function PlaylistPage() {
   const sessionUser = useSession((s) => s.user);
   const currentUserId = String(sessionUser?.id ?? appUserId);
   const play = useApp((s) => s.play);
+  const removePlaylist = useApp((s) => s.deletePlaylist);
   const navigate = useNavigate();
 
   const [playlist, setPlaylist] = useState<PlaylistDetail | null>(null);
@@ -220,6 +221,7 @@ function PlaylistPage() {
       if (!result?.ok) {
         throw new Error(result?.message ?? "No se pudo eliminar la playlist");
       }
+      removePlaylist(playlist.playlist.id);
       navigate({ to: "/biblioteca" });
     } catch (err) {
       console.error("Error al eliminar playlist:", err);

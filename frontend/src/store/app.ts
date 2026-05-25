@@ -15,14 +15,14 @@ export interface PlaylistTrack {
 }
 
 export interface Playlist {
-  id: string;
+  id: string | number;
   nombre: string;
-  usuario_id: string;
+  usuario_id: string | number;
   fecha_creacion: string;
-  es_publica: boolean;
-  colaborativa: boolean;
-  colaboradores: string[]; // user ids
-  tracks: PlaylistTrack[];
+  es_publica: boolean | number;
+  colaborativa: boolean | number;
+  colaboradores?: string[]; // user ids
+  tracks?: PlaylistTrack[];
 }
 
 export interface Reproduccion {
@@ -59,7 +59,8 @@ interface AppState {
 
   createPlaylist: (nombre: string, es_publica: boolean) => Playlist | { error: string };
   renamePlaylist: (id: string, nombre: string) => void | { error: string };
-  deletePlaylist: (id: string) => void;
+  deletePlaylist: (id: string | number) => void;
+  setPlaylists: (playlists: Playlist[]) => void;
   togglePlaylistPublic: (id: string) => void;
   togglePlaylistCollab: (id: string) => void;
   addColaborador: (playlistId: string, userId: string) => void;
@@ -159,7 +160,8 @@ export const useApp = create<AppState>()(
       },
 
       deletePlaylist: (id) =>
-        set((s) => ({ playlists: s.playlists.filter((p) => p.id !== id) })),
+        set((s) => ({ playlists: s.playlists.filter((p) => String(p.id) !== String(id)) })),
+      setPlaylists: (playlists) => set(() => ({ playlists })),
 
       togglePlaylistPublic: (id) =>
         set((s) => ({
@@ -177,35 +179,42 @@ export const useApp = create<AppState>()(
 
       addColaborador: (playlistId, userId) =>
         set((s) => ({
-          playlists: s.playlists.map((p) =>
-            p.id === playlistId && !p.colaboradores.includes(userId)
-              ? { ...p, colaboradores: [...p.colaboradores, userId] }
-              : p
-          ),
+          playlists: s.playlists.map((p) => {
+            if (String(p.id) !== String(playlistId)) return p;
+            const colaboradores = p.colaboradores ?? [];
+            return colaboradores.includes(userId)
+              ? p
+              : { ...p, colaboradores: [...colaboradores, userId] };
+          }),
         })),
 
       removeColaborador: (playlistId, userId) =>
         set((s) => ({
-          playlists: s.playlists.map((p) =>
-            p.id === playlistId
-              ? { ...p, colaboradores: p.colaboradores.filter((u) => u !== userId) }
-              : p
-          ),
+          playlists: s.playlists.map((p) => {
+            if (String(p.id) !== String(playlistId)) return p;
+            return {
+              ...p,
+              colaboradores: (p.colaboradores ?? []).filter((u) => u !== userId),
+            };
+          }),
         })),
 
       addToPlaylist: (playlistId, cancionId) => {
-        const pl = get().playlists.find((p) => p.id === playlistId);
+        const pl = get().playlists.find((p) => String(p.id) === String(playlistId));
         if (!pl) return { error: "Playlist no encontrada" };
-        if (pl.tracks.some((t) => t.cancion_id === cancionId))
+        const tracks = pl.tracks ?? [];
+        if (tracks.some((t) => t.cancion_id === cancionId))
           return { error: "Esa canción ya está en la playlist" };
         const track: PlaylistTrack = {
           cancion_id: cancionId,
-          orden: pl.tracks.length + 1,
+          orden: tracks.length + 1,
           fecha_agregada: new Date().toISOString(),
         };
         set((s) => ({
           playlists: s.playlists.map((p) =>
-            p.id === playlistId ? { ...p, tracks: [...p.tracks, track] } : p
+            String(p.id) === String(playlistId)
+              ? { ...p, tracks: [...(p.tracks ?? []), track] }
+              : p
           ),
         }));
       },
@@ -213,8 +222,8 @@ export const useApp = create<AppState>()(
       removeFromPlaylist: (playlistId, cancionId) =>
         set((s) => ({
           playlists: s.playlists.map((p) => {
-            if (p.id !== playlistId) return p;
-            const filtered = p.tracks
+            if (String(p.id) !== String(playlistId)) return p;
+            const filtered = (p.tracks ?? [])
               .filter((t) => t.cancion_id !== cancionId)
               .map((t, i) => ({ ...t, orden: i + 1 }));
             return { ...p, tracks: filtered };
@@ -224,8 +233,8 @@ export const useApp = create<AppState>()(
       reorderPlaylist: (playlistId, fromIdx, toIdx) =>
         set((s) => ({
           playlists: s.playlists.map((p) => {
-            if (p.id !== playlistId) return p;
-            const arr = [...p.tracks];
+            if (String(p.id) !== String(playlistId)) return p;
+            const arr = [...(p.tracks ?? [])];
             const [m] = arr.splice(fromIdx, 1);
             arr.splice(toIdx, 0, m);
             return { ...p, tracks: arr.map((t, i) => ({ ...t, orden: i + 1 })) };
