@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 class CreateCancionDTO(BaseModel):
     titulo: str
-    duracion_seg: int
+    duracion_seg: int | None = None
     album_id: int
     url_audio: str | None = None
 

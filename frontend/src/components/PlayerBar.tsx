@@ -46,11 +46,13 @@ export function PlayerBar() {
   // Elemento <audio> real para reproducir el archivo alojado en Cloudinary.
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  useEffect(() => {
-    if (!isPlaying) return;
-    const id = setInterval(() => tick(1), 1000);
-    return () => clearInterval(id);
-  }, [isPlaying, tick]);
+  // NO usar tick() porque el audio real maneja timeupdate correctamente.
+  // Solo se usa tick() en reproducción sintética (sin elemento <audio>).
+  // useEffect(() => {
+  //   if (!isPlaying) return;
+  //   const id = setInterval(() => tick(1), 1000);
+  //   return () => clearInterval(id);
+  // }, [isPlaying, tick]);
 
   // Cargar el audio cuando cambia la canción.
   useEffect(() => {
@@ -109,19 +111,30 @@ export function PlayerBar() {
       next();
     };
 
+    const handleLoadedMetadata = () => {
+      // Sincronizar con el progreso del store después de cargar metadatos
+      if (Math.abs(audio.currentTime - progress) > 0.5) {
+        audio.currentTime = progress;
+      }
+    };
+
     audio.addEventListener("timeupdate", handleTimeUpdate);
     audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
 
     return () => {
       audio.removeEventListener("timeupdate", handleTimeUpdate);
       audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
     };
   }, [next, play, setProgress, shuffle, repeatMode, cancion?.id, cancion?.url_audio]);
 
+  // Sincronización del progreso cuando cambia desde controles externos (ej: slider)
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !cancion) return;
-    if (Math.abs(audio.currentTime - progress) > 0.5) {
+    // Solo sincronizar si hay una diferencia significativa (>1 segundo)
+    if (Math.abs(audio.currentTime - progress) > 1) {
       audio.currentTime = progress;
     }
   }, [progress, cancion?.id]);

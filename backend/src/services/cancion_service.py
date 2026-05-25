@@ -1,5 +1,3 @@
-# TODO: implementar ProductService con la misma estructura que UserService
-
 from sqlalchemy.orm import Session
 from sqlalchemy import func, case, Float
 from datetime import datetime
@@ -10,6 +8,7 @@ from ..repositories.cancion_repository import CancionRepository
 from ..db.models.reproduccion_model import Reproduccion
 from ..db.models.cancion_model import Cancion
 from ..utils.errors import NotFoundError
+from ..utils.cloudinary import get_cloudinary_duration
 
 class CancionService:
     def __init__(self, db: Session):
@@ -19,7 +18,23 @@ class CancionService:
     def create_cancion(self, cancion_dto: CreateCancionDTO) -> CancionResponseDTO:
         if not self.album_repo.find_by_id(cancion_dto.album_id):
             raise NotFoundError("Album no encontrado")
-        return self.cancion_repo.create(cancion_dto)
+        
+        # Si no hay duración pero hay URL de audio, intentar obtenerla de Cloudinary
+        duracion_seg = cancion_dto.duracion_seg
+        if duracion_seg is None:
+            if cancion_dto.url_audio:
+                duracion_seg = get_cloudinary_duration(cancion_dto.url_audio)
+            else:
+                raise ValueError("Debes proporcionar duracion_seg o una url_audio válida de Cloudinary")
+        
+        # Crear DTO con la duración resuelta
+        cancion_dto_final = CreateCancionDTO(
+            titulo=cancion_dto.titulo,
+            duracion_seg=duracion_seg,
+            album_id=cancion_dto.album_id,
+            url_audio=cancion_dto.url_audio,
+        )
+        return self.cancion_repo.create(cancion_dto_final)
 
     def get_cancion_by_id(self, cancion_id: int) -> CancionResponseDTO | None:
         return self.cancion_repo.find_by_id(cancion_id)
