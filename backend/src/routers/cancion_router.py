@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from src.db.connection import get_db
-from src.dtos.cancion_dto import CreateCancionDTO, CancionResponseDTO
+from src.dtos.cancion_dto import CreateCancionDTO, CancionResponseDTO, CancionEstadisticasDTO
 from src.schemas.cancion_schema import CreateCancionSchema
 from src.services.cancion_service import CancionService
 
@@ -48,6 +48,12 @@ def list_canciones_endpoint(db: Session = Depends(get_db), album_id: int | None 
 def list_all_canciones_endpoint(db: Session = Depends(get_db)):
     """Retorna todas las canciones sin filtrar."""
     return CancionService(db).list_canciones()
+
+
+@router.get("/{cancion_id}/estadisticas", response_model=CancionEstadisticasDTO)
+def get_estadisticas_cancion_endpoint(cancion_id: int, anio_inicio: int | None = None, anio_fin: int | None = None, db: Session = Depends(get_db)):
+    """Retorna estadísticas de una canción, con filtro opcional por año."""
+    return CancionService(db).get_estadisticas_cancion(cancion_id, anio_inicio, anio_fin)
 
 
 @router.get("/{cancion_id}", response_model=CancionResponseDTO)

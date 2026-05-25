@@ -12,3 +12,14 @@ class CancionResponseDTO(BaseModel):
     duracion_seg: int
     album_id: int
     url_audio: str | None = None
+
+
+class CancionEstadisticasDTO(BaseModel):
+    cancion_id: int
+    cantidad_reproducciones: int
+    reproducciones_validas: int
+    porcentaje_promedio_escuchado: str
+
+    model_config = {
+        "json_encoders": {}
+    }
