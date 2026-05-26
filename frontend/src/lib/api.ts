@@ -198,6 +198,22 @@ export const api = {
     listar: (query?: { album_id?: number }) => get<Cancion[]>("/canciones", query),
     obtener: (id: number) => get<Cancion>(`/canciones/${id}`),
     crear: (data: Omit<Cancion, "id" | "album">) => post<Cancion>("/canciones", data),
+    subir: async (data: { titulo: string; album_id: number; file: File }): Promise<Cancion> => {
+      // Sube el archivo al backend, que se encarga de mandarlo a Cloudinary con
+      // public_id = "cancion_{id}" (id de la DB). Devuelve la canción ya con url_audio.
+      const form = new FormData();
+      form.append("titulo", data.titulo);
+      form.append("album_id", String(data.album_id));
+      form.append("audio_file", data.file);
+      const res = await fetch(buildUrl("/canciones/upload"), { method: "POST", body: form });
+      const text = await res.text();
+      const parsed = text ? JSON.parse(text) : null;
+      if (!res.ok) {
+        const msg = parsed?.detail ?? parsed?.message ?? res.statusText;
+        throw new ApiError(res.status, typeof msg === "string" ? msg : "Error al subir", parsed);
+      }
+      return parsed as Cancion;
+    },
     actualizar: (id: number, data: Partial<Omit<Cancion, "id" | "album">>) =>
       put<Cancion>(`/canciones/${id}`, data),
     eliminar: (id: number) => del<{ ok: true }>(`/canciones/${id}`),

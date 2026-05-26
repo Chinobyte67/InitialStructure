@@ -14,14 +14,21 @@ cloudinary.config(
 )
 
 
-def upload_audio_to_cloudinary(file: BinaryIO) -> tuple[str, int]:
-    result = cloudinary.uploader.upload(
-        file,
-        resource_type="video",
-        folder="canciones",
-        use_filename=True,
-        unique_filename=True,
-    )
+def upload_audio_to_cloudinary(file: BinaryIO, public_id: str | None = None) -> tuple[str, int]:
+    upload_opts: dict = {
+        "resource_type": "video",
+        "folder": "canciones",
+    }
+    if public_id:
+        # public_id explícito: el asset queda como "canciones/<public_id>" en Cloudinary,
+        # atado al id de la fila en la DB. overwrite=True permite re-subir si hace falta.
+        upload_opts["public_id"] = public_id
+        upload_opts["overwrite"] = True
+    else:
+        upload_opts["use_filename"] = True
+        upload_opts["unique_filename"] = True
+
+    result = cloudinary.uploader.upload(file, **upload_opts)
 
     secure_url = result.get("secure_url") or result.get("url")
     if not secure_url:

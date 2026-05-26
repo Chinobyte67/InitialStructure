@@ -1,6 +1,5 @@
 import { type ChangeEvent, useState } from "react";
 import { api } from "@/lib/api";
-import { subirAudio } from "@/lib/cloudinary";
 
 interface UploadSongProps {
   albumId: number;
@@ -19,8 +18,8 @@ export default function UploadSong({ albumId }: UploadSongProps) {
       setSelectedFile(null);
       return;
     }
-    if (!file.type.startsWith("audio/")) {
-      setError("Por favor seleccioná un archivo de audio.");
+    if (!file.type.startsWith("audio/") && !file.type.startsWith("video/")) {
+      setError("Por favor seleccioná un archivo de audio o video.");
       setSelectedFile(null);
       return;
     }
@@ -43,15 +42,15 @@ export default function UploadSong({ albumId }: UploadSongProps) {
     setUploading(true);
 
     try {
-      const uploaded = await subirAudio(selectedFile);
-      const created = await api.canciones.crear({
+      // El backend crea la fila, sube a Cloudinary con public_id = "cancion_{id}"
+      // y devuelve la canción ya con url_audio.
+      const created = await api.canciones.subir({
         titulo: titulo.trim(),
         album_id: albumId,
-        duracion_seg: uploaded.duracionSeg,
-        url_audio: uploaded.url,
+        file: selectedFile,
       });
 
-      setMessage(`Canción creada: ${created.titulo}`);
+      setMessage(`Canción creada: ${created.titulo} (id=${created.id})`);
       setTitulo("");
       setSelectedFile(null);
     } catch (err) {
@@ -81,7 +80,7 @@ export default function UploadSong({ albumId }: UploadSongProps) {
           <span className="text-sm font-medium text-slate-700">Archivo de audio</span>
           <input
             type="file"
-            accept="audio/*"
+            accept="audio/*,video/mp4"
             onChange={handleFileChange}
             className="mt-1 block w-full text-sm text-slate-500"
           />

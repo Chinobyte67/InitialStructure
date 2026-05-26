@@ -36,6 +36,30 @@ class CancionService:
         )
         return self.cancion_repo.create(cancion_dto_final)
 
+    def create_cancion_pendiente(self, titulo: str, album_id: int) -> CancionResponseDTO:
+        """Crea una canción sin audio (duracion=0, url=None) y devuelve la fila con su id.
+        Se usa en el flujo de upload para luego nombrar el asset de Cloudinary con ese id."""
+        if not self.album_repo.find_by_id(album_id):
+            raise NotFoundError("Album no encontrado")
+        return self.cancion_repo.create(CreateCancionDTO(
+            titulo=titulo,
+            album_id=album_id,
+            duracion_seg=0,
+            url_audio=None,
+        ))
+
+    def set_audio(self, cancion_id: int, url_audio: str, duracion_seg: int) -> CancionResponseDTO:
+        """Setea url_audio y duracion_seg en una canción ya creada (tras subir a Cloudinary)."""
+        actual = self.cancion_repo.find_by_id(cancion_id)
+        if not actual:
+            raise NotFoundError("Cancion no encontrada")
+        return self.cancion_repo.update(cancion_id, CreateCancionDTO(
+            titulo=actual.titulo,
+            album_id=actual.album_id,
+            duracion_seg=duracion_seg,
+            url_audio=url_audio,
+        ))
+
     def get_cancion_by_id(self, cancion_id: int) -> CancionResponseDTO | None:
         return self.cancion_repo.find_by_id(cancion_id)
 

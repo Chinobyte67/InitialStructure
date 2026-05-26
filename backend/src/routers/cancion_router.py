@@ -29,21 +29,30 @@ def upload_cancion(
     audio_file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
-    if audio_file.content_type and not audio_file.content_type.startswith("audio/"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El archivo debe ser de audio.")
+    # Aceptamos audio/* y video/* (mp4 también — Cloudinary trata audio como video).
+    ctype = audio_file.content_type or ""
+    if ctype and not (ctype.startswith("audio/") or ctype.startswith("video/")):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El archivo debe ser de audio o video.")
 
+    service = CancionService(db)
+
+    # 1) Crear la fila primero para obtener el id de la DB.
+    pendiente = service.create_cancion_pendiente(titulo=titulo, album_id=album_id)
+
+    # 2) Subir a Cloudinary con public_id = "cancion_{id}" → el asset en Cloudinary
+    #    queda atado al id de la DB. Rollback si falla.
     try:
-        url_audio, duracion_seg = upload_audio_to_cloudinary(audio_file.file)
+        public_id = f"cancion_{pendiente.id}"
+        url_audio, duracion_seg = upload_audio_to_cloudinary(audio_file.file, public_id=public_id)
     except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al subir el audio: {exc}") from exc
+        service.delete_cancion(pendiente.id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al subir el audio: {exc}",
+        ) from exc
 
-    dto = CreateCancionDTO(
-        titulo=titulo,
-        album_id=album_id,
-        duracion_seg=duracion_seg,
-        url_audio=url_audio,
-    )
-    return CancionService(db).create_cancion(dto)
+    # 3) Completar la fila con la URL real y la duración detectada por Cloudinary.
+    return service.set_audio(pendiente.id, url_audio=url_audio, duracion_seg=duracion_seg)
 
 
 def get_cancion(cancion_id: int, db: Session = Depends(get_db)):
