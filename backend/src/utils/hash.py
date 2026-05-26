@@ -16,4 +16,8 @@ def hash_password(plain: str) -> str:
 
 def verify_password(plain: str, hashed: str) -> bool:
     password_bytes = _normalize_password(plain)
-    return bcrypt.checkpw(password_bytes, hashed.encode('utf-8'))
+    try:
+        return bcrypt.checkpw(password_bytes, hashed.encode('utf-8'))
+    except (ValueError, TypeError) as exc:
+        print(f"verify_password: hash inválido o error al verificar contraseña: {exc}")
+        return False

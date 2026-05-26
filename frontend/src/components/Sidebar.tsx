@@ -98,7 +98,7 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="w-64 shrink-0 bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col h-screen sticky top-0">
+    <aside className="w-64 shrink-0 bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col h-screen pb-24 sticky top-0">
       <div className="px-5 py-5 flex items-center gap-2.5 border-b border-sidebar-border">
         <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold shadow-emboss">
           ◉
@@ -132,33 +132,33 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="px-3 pb-2">
-        <h3 className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground px-3 py-2">
-          Tu biblioteca
-        </h3>
-        <div className="space-y-0.5">
-          {libraryNav.map((item) => {
-            const active = pathname === item.to;
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-                  active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-deboss"
-                    : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                )}
-              >
-                <item.icon className="w-4 h-4" />
-                {item.label}
-              </Link>
-            );
-          })}
+      <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-4 scrollbar-thin scrollbar-thumb-sidebar-border scrollbar-track-sidebar-bg">
+        <div className="pb-2">
+          <h3 className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground px-3 py-2">
+            Tu biblioteca
+          </h3>
+          <div className="space-y-0.5">
+            {libraryNav.map((item) => {
+              const active = pathname === item.to;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                    active
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-deboss"
+                      : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                  )}
+                >
+                  <item.icon className="w-4 h-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      <div className="px-3 pt-2 flex-1 flex flex-col min-h-0">
         <div className="flex items-center justify-between px-3 py-2">
           <h3 className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground">
             Playlists
@@ -185,7 +185,7 @@ export function Sidebar() {
           </form>
         )}
 
-        <div className="flex-1 overflow-y-auto space-y-0.5 pb-4">
+        <div className="space-y-0.5 pb-6">
           {loading ? (
             <p className="px-3 text-xs text-muted-foreground">Cargando playlists...</p>
           ) : playlists.length === 0 ? (
@@ -214,17 +214,23 @@ export function Sidebar() {
         </div>
       </div>
 
-      <div className="px-3 py-3 border-t border-sidebar-border text-sm">
+      <div className="mt-auto border-t border-sidebar-border bg-sidebar px-3 py-3 text-sm">
         {authedEmail ? (
           <button
-            onClick={() => { setUser(null); navigate({ to: "/auth" }); }}
+            onClick={() => {
+              setUser(null);
+              navigate({ to: "/auth" });
+            }}
             className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50"
           >
             <LogOut className="w-4 h-4" />
             <span className="truncate">Cerrar sesión</span>
           </button>
         ) : (
-          <Link to="/auth" className="flex items-center gap-2 px-3 py-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50">
+          <Link
+            to="/auth"
+            className="flex items-center gap-2 px-3 py-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50"
+          >
             <LogIn className="w-4 h-4" />
             Iniciar sesión
           </Link>

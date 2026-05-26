@@ -17,6 +17,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const nav = useNavigate();
   const setUser = useSession((s) => s.setUser);
+  const setToken = useSession((s) => s.setToken);
   const user = useSession((s) => s.user);
 
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -47,16 +48,28 @@ function AuthPage() {
         });
         setUser(u);
       } else {
-        // Sin auth completo aún: buscamos por email entre los usuarios existentes.
+        const token = await api.auth.login({ email: email.trim(), password });
+
         const lista = await api.usuarios.listar();
         const u = lista.find((x) => x.email.toLowerCase() === email.trim().toLowerCase());
-        if (!u) throw new Error("No existe ningún usuario con ese email.");
+        if (!u) throw new Error("No se pudo cargar el usuario tras iniciar sesión.");
+
+        setToken(token.access_token);
         setUser(u);
       }
       nav({ to: "/" });
     } catch (e: unknown) {
-      const msg = e instanceof ApiError || e instanceof Error ? e.message : "Error";
-      setErr(msg);
+      if (e instanceof ApiError) {
+        if (e.status === 401) {
+          setErr("Credenciales incorrectas");
+        } else {
+          setErr(e.message);
+        }
+      } else if (e instanceof Error) {
+        setErr(e.message);
+      } else {
+        setErr("Error inesperado");
+      }
     } finally {
       setLoading(false);
     }
