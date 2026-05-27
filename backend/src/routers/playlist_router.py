@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from src.db.connection import get_db
 from src.dtos.playlist_canciones_dto import PlaylistCancionesResponseDTO
-from src.dtos.playlist_dto import CreatePlaylistDTO, PlaylistResponseDTO, PlaylistResumenDTO
+from src.dtos.playlist_dto import CreatePlaylistDTO, PlaylistResponseDTO, PlaylistResumenDTO, UpdatePlaylistDTO
 from src.schemas.playlist_schema import CreatePlaylistSchema, UpdatePlaylistSchema
 from src.schemas.playlist_colaborador_schema import AddPlaylistColaboradorSchema
 from src.services.playlist_canciones_service import PlaylistCancionesService

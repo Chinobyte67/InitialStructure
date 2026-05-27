@@ -27,3 +27,11 @@ class PlaylistResumenDTO(BaseModel):
     nombre: str
     cantidad_canciones: int
     duracion_total: str  # Formato: hh:mm:ss
+
+
+class UpdatePlaylistDTO(BaseModel):
+    nombre: str | None = None
+    descripcion: str | None = None
+    imagen_url: str | None = None
+    es_publica: int | None = None
+    colaborativa: int | None = None
