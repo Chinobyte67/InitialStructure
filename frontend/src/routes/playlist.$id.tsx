@@ -201,7 +201,8 @@ function PlaylistPage() {
   const handleRename = async () => {
     setEditError(null);
     try {
-      await renombrarPlaylist({ id: playlist.playlist.id, nombre: name });
+      const usuario_id = Number(sessionUser?.id ?? appUserId);
+      await renombrarPlaylist({ id: playlist.playlist.id, nombre: name, usuario_id });
       setPlaylist((prev) =>
         prev
           ? {
