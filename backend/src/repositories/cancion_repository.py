@@ -4,6 +4,7 @@
 from sqlalchemy.orm import Session
 
 from ..db.models.cancion_model import Cancion
+from ..db.models.reproduccion_model import Reproduccion
 from ..dtos.cancion_dto import CreateCancionDTO, CancionResponseDTO
 from ..mappers.cancion_mapper import to_cancion_response      
 
@@ -52,6 +53,8 @@ class CancionRepository:
         cancion = self.db.query(Cancion).filter(Cancion.id == cancion_id).first()
         if not cancion:
             return False
+        # Eliminar reproducciones asociadas a la canción antes de borrar la canción.
+        self.db.query(Reproduccion).filter(Reproduccion.cancion_id == cancion_id).delete(synchronize_session=False)
         self.db.delete(cancion)
         self.db.commit()
         return True

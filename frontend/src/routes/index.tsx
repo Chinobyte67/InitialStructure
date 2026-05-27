@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useApp } from "@/store/app";
+import { useSession } from "@/store/session";
 import { api, Artista, Album, Cancion } from "@/lib/api";
 import { CoverArt } from "@/components/CoverArt";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -21,7 +21,7 @@ const getColor = (id: number): [string, string] => {
 };
 
 function Index() {
-  const user = useApp((s) => s.user);
+  const sessionUser = useSession((s) => s.user);
   const [playlists, setPlaylists] = useState<{ id: string }[]>([]);
   const [albumes, setAlbumes] = useState<Album[]>([]);
   const [artistas, setArtistas] = useState<Artista[]>([]);
@@ -63,7 +63,7 @@ function Index() {
     <div className="px-8 pt-8 pb-12 max-w-[1400px]">
       <div className="mb-10">
         <h1 className="text-4xl font-semibold tracking-tight">
-          Bienvenido, {user.nombre || "Usuario"}
+          Bienvenido, {sessionUser?.nombre ?? "Usuario"}
         </h1>
         <p className="text-muted-foreground mt-1">
           {playlists.length} playlists · {canciones.length} canciones en el catálogo

@@ -10,9 +10,9 @@ class CreateUserSchema(BaseModel):
     @classmethod
     def validate_password(cls, v):
         if len(v) < 8:
-            raise ValueError('Password must be at least 8 characters')
+            raise ValueError('la contraseña debe ser minimo 8 caracteres')
         if len(v.encode('utf-8')) > 72:
-            raise ValueError('Password must not exceed 72 bytes when encoded')
+            raise ValueError('La contraseña no puede exceder los 72 bytes al codificarse')
         return v
 
     @field_validator('plan', mode='after')
@@ -34,9 +34,9 @@ class UpdateUserSchema(BaseModel):
         if v is None:
             return v
         if len(v) < 8:
-            raise ValueError('Password must be at least 8 characters')
+            raise ValueError('la contraseña debe ser minimo 8 caracteres')
         if len(v.encode('utf-8')) > 72:
-            raise ValueError('Password must not exceed 72 bytes when encoded')
+            raise ValueError('La contraseña no puede exceder los 72 bytes al codificarse')
         return v
 
     @field_validator('plan', mode='after')
