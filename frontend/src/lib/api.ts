@@ -192,6 +192,11 @@ export const api = {
       const artista = await post<RawArtista>("/artistas", data);
       return normalizeArtista(artista);
     },
+    actualizar: async (id: number, data: Partial<Omit<RawArtista, "id">>) => {
+      const artista = await put<RawArtista>(`/artistas/${id}`, data);
+      return normalizeArtista(artista);
+    },
+    eliminar: (id: number) => del<{ ok: true }>(`/artistas/${id}`),
   },
 
   // Álbumes
@@ -199,6 +204,8 @@ export const api = {
     listar: (query?: { artista_id?: number }) => get<Album[]>("/albumes", query),
     obtener: (id: number) => get<Album>(`/albumes/${id}`),
     crear: (data: Omit<Album, "id" | "artista">) => post<Album>("/albumes", data),
+    actualizar: (id: number, data: Partial<Omit<Album, "id" | "artista">>) => put<Album>(`/albumes/${id}`, data),
+    eliminar: (id: number) => del<{ ok: true }>(`/albumes/${id}`),
   },
 
   // Canciones
