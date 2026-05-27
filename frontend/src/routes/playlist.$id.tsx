@@ -13,7 +13,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { api } from "@/lib/api";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { api, type UserResponse } from "@/lib/api";
 
 export const Route = createFileRoute("/playlist/$id")({
   component: PlaylistPage,
@@ -114,7 +121,6 @@ function PlaylistPage() {
   const { id } = Route.useParams();
   const appUserId = useApp((s) => s.user.id);
   const sessionUser = useSession((s) => s.user);
-  const currentUserId = String(sessionUser?.id ?? appUserId);
   const playSong = useApp((s) => s.playSong);
   const removePlaylist = useApp((s) => s.deletePlaylist);
   const navigate = useNavigate();
@@ -125,6 +131,10 @@ function PlaylistPage() {
   const [name, setName] = useState("");
   const [editError, setEditError] = useState<string | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
+  const [users, setUsers] = useState<UserResponse[]>([]);
+  const [selectedCollaborator, setSelectedCollaborator] = useState<string>("");
+  const [collaboratorError, setCollaboratorError] = useState<string | null>(null);
+  const [collaboratorLoading, setCollaboratorLoading] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -147,6 +157,17 @@ function PlaylistPage() {
       })
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!playlist) return;
+
+    api.usuarios
+      .listar()
+      .then((list) => setUsers(list))
+      .catch((err) => {
+        console.error("Error cargando usuarios para colaboradores:", err);
+      });
+  }, [playlist]);
 
   const tracks = useMemo(() => {
     if (!playlist) return [];
@@ -181,6 +202,11 @@ function PlaylistPage() {
   const isOwner = String(sessionUser?.id) === playlistOwnerId || String(appUserId) === playlistOwnerId;
   const isAdmin = sessionUser?.is_admin ?? false;
   const canDelete = isOwner || isAdmin;
+  const collaboratorIds = playlist.playlist.colaboradores?.map(String) ?? [];
+  const collaboratorUsers = users.filter((user) => collaboratorIds.includes(String(user.id)));
+  const availableCollaborators = users.filter(
+    (user) => String(user.id) !== playlistOwnerId && !collaboratorIds.includes(String(user.id))
+  );
   console.log(
     "Sesión ID:", sessionUser?.id,
     "Playlist Dueño ID:", playlistOwnerId,
@@ -267,6 +293,71 @@ function PlaylistPage() {
       );
     } catch (err) {
       setPageError(err instanceof Error ? err.message : "No se pudo actualizar la colaboración");
+    }
+  };
+
+  const handleAddCollaborator = async () => {
+    setCollaboratorError(null);
+    if (!selectedCollaborator) {
+      setCollaboratorError("Selecciona un usuario para agregar como colaborador.");
+      return;
+    }
+
+    const usuario_id = Number(sessionUser?.id ?? appUserId);
+    if (Number.isNaN(usuario_id)) {
+      setCollaboratorError("No estás autenticado para agregar colaboradores.");
+      return;
+    }
+
+    setCollaboratorLoading(true);
+    try {
+      const collaboratorId = Number(selectedCollaborator);
+      const updated = await api.playlists.addColaborador(playlist.playlist.id, {
+        usuario_id: collaboratorId,
+        usuario_dueno_id: usuario_id,
+      });
+      setPlaylist((prev) =>
+        prev
+          ? {
+              ...prev,
+              playlist: { ...prev.playlist, colaboradores: updated.colaboradores ?? [] },
+            }
+          : prev
+      );
+      setSelectedCollaborator("");
+    } catch (err) {
+      setCollaboratorError(err instanceof Error ? err.message : "No se pudo agregar el colaborador.");
+    } finally {
+      setCollaboratorLoading(false);
+    }
+  };
+
+  const handleRemoveCollaborator = async (userId: number) => {
+    setCollaboratorError(null);
+    const usuario_id = Number(sessionUser?.id ?? appUserId);
+    if (Number.isNaN(usuario_id)) {
+      setCollaboratorError("No estás autenticado para quitar colaboradores.");
+      return;
+    }
+
+    setCollaboratorLoading(true);
+    try {
+      const updated = await api.playlists.removeColaborador(playlist.playlist.id, userId, usuario_id);
+      setPlaylist((prev) =>
+        prev
+          ? {
+              ...prev,
+              playlist: {
+                ...prev.playlist,
+                colaboradores: updated.colaboradores ?? [],
+              },
+            }
+          : prev
+      );
+    } catch (err) {
+      setCollaboratorError(err instanceof Error ? err.message : "No se pudo quitar el colaborador.");
+    } finally {
+      setCollaboratorLoading(false);
     }
   };
 
@@ -370,6 +461,75 @@ function PlaylistPage() {
             </>
           )}
         </div>
+        {playlist.playlist.colaborativa && (
+          <div className="mt-6 rounded-2xl border border-border bg-background/80 p-5 shadow-sm">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm font-semibold">Colaboradores</p>
+                <p className="text-xs text-muted-foreground">Agrega o quita usuarios si la playlist es colaborativa.</p>
+              </div>
+              {isOwner && (
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-2 w-full md:w-auto">
+                  <div className="min-w-[240px] flex-1">
+                    <Select value={selectedCollaborator} onValueChange={setSelectedCollaborator}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar usuario" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableCollaborators.length > 0 ? (
+                          availableCollaborators.map((user) => (
+                            <SelectItem key={user.id} value={String(user.id)}>
+                              {user.nombre ?? user.email}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="" disabled>
+                            No hay usuarios disponibles
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    onClick={handleAddCollaborator}
+                    disabled={!selectedCollaborator || collaboratorLoading || availableCollaborators.length === 0}
+                  >
+                    Agregar colaborador
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {collaboratorUsers.length > 0 ? (
+                collaboratorUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 bg-card p-3"
+                  >
+                    <div>
+                      <p className="font-medium">{user.nombre ?? user.email}</p>
+                      <p className="text-xs text-muted-foreground">ID: {user.id}</p>
+                    </div>
+                    {isOwner && (
+                      <Button
+                        variant="secondary"
+                        onClick={() => handleRemoveCollaborator(user.id)}
+                        disabled={collaboratorLoading}
+                      >
+                        Quitar
+                      </Button>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No hay colaboradores asignados aún.</p>
+              )}
+            </div>
+
+            {collaboratorError && <p className="mt-3 text-sm text-destructive">{collaboratorError}</p>}
+          </div>
+        )}
       </div>
 
       <div className="px-8 py-6 max-w-[1400px]">
