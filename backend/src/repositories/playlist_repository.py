@@ -85,7 +85,11 @@ class PlaylistRepository:
             setattr(playlist, key, value)
         self.db.commit()
         self.db.refresh(playlist)
-        return to_playlist_response(playlist, self.playlist_colaboradores_repository.list_collaborators(playlist.id))
+        return to_playlist_response(
+            playlist, 
+            self.playlist_colaboradores_repository.list_collaborators(playlist.id),
+            self._get_playlist_canciones(playlist.id)
+        )
     
     def delete(self, playlist_id: int, usuario_id: int) -> bool:
         playlist = self.db.query(Playlist).filter(Playlist.id == playlist_id).first()

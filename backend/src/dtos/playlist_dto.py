@@ -12,6 +12,13 @@ class CreatePlaylistDTO(BaseModel):
     es_publica: int | None = None
     colaborativa: int | None = None
 
+class UpdatePlaylistDTO(BaseModel):
+    nombre: str | None = None
+    descripcion: str | None = None
+    imagen_url: str | None = None
+    es_publica: int | None = None
+    colaborativa: int | None = None
+
 class PlaylistResponseDTO(BaseModel):
     id: int
     nombre: str

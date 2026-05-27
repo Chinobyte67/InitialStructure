@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from src.db.connection import get_db
 from src.dtos.playlist_canciones_dto import PlaylistCancionesResponseDTO
-from src.dtos.playlist_dto import CreatePlaylistDTO, PlaylistResponseDTO, PlaylistResumenDTO
+from src.dtos.playlist_dto import CreatePlaylistDTO, UpdatePlaylistDTO, PlaylistResponseDTO, PlaylistResumenDTO
 from src.schemas.playlist_schema import CreatePlaylistSchema, UpdatePlaylistSchema
 from src.schemas.playlist_colaborador_schema import AddPlaylistColaboradorSchema
 from src.services.playlist_canciones_service import PlaylistCancionesService
@@ -36,7 +36,7 @@ def list_playlists(db: Session = Depends(get_db)):
 @router.delete("/{playlist_id}", response_model=dict[str, str | bool])
 def delete_playlist_by_id(
     playlist_id: int,
-    usuario_id: int | None = None,
+    usuario_id: int | None = Query(None),
     db: Session = Depends(get_db),
 ):
     if usuario_id is None:
@@ -67,7 +67,7 @@ def add_playlist_colaborador(
 def remove_playlist_colaborador(
     playlist_id: int,
     usuario_id: int,
-    usuario_dueno_id: int,
+    usuario_dueno_id: int | None = Query(None),
     db: Session = Depends(get_db),
 ):
     return PlaylistColaboradoresService(db).remove_collaborator(
@@ -88,12 +88,12 @@ def delete_playlist(
 def update_playlist(
     playlist_id: int,
     payload: UpdatePlaylistSchema,
-    usuario_dueno_id: int,
+    usuario_dueno_id: int | None = Query(None),
     db: Session = Depends(get_db),
 ):
     dto = UpdatePlaylistDTO(**payload.model_dump())
     playlist = PlaylistController(db).get_playlist_by_id(playlist_id)
-    if playlist.usuario_id != usuario_dueno_id:
+    if usuario_dueno_id is not None and playlist.usuario_id != usuario_dueno_id:
         raise ForbiddenError("Solo el dueño puede renombrar o actualizar la playlist")
     return PlaylistController(db).update_playlist(playlist_id, dto)
 
@@ -101,7 +101,7 @@ def update_playlist(
 def partial_update_playlist(
     playlist_id: int,
     payload: UpdatePlaylistSchema | None = None,
-    usuario_dueno_id: int | None = None,
+    usuario_dueno_id: int | None = Query(None),
     db: Session = Depends(get_db),
 ):
     if payload is None:
