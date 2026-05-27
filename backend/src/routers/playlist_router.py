@@ -9,7 +9,6 @@ from src.schemas.playlist_colaborador_schema import AddPlaylistColaboradorSchema
 from src.services.playlist_canciones_service import PlaylistCancionesService
 from src.services.playlist_colaboradores_service import PlaylistColaboradoresService
 from src.services.playlist_service import PlaylistController
-from src.middlewares.auth_middleware import get_current_user_optional
 from src.utils.errors import ForbiddenError
 
 router = APIRouter(prefix="/playlists", tags=["playlists"])
@@ -21,29 +20,18 @@ def create_playlist(payload: CreatePlaylistSchema, db: Session = Depends(get_db)
     return PlaylistController(db).create_playlist(dto)
 
 @router.get("/{playlist_id}", response_model=PlaylistResponseDTO)
-def get_playlist(
-    playlist_id: int,
-    current_user = Depends(get_current_user_optional),
-    db: Session = Depends(get_db),
-):
-    return PlaylistController(db).get_playlist_by_id(playlist_id, current_user)
+def get_playlist(playlist_id: int, db: Session = Depends(get_db)):
+    return PlaylistController(db).get_playlist_by_id(playlist_id)
 
 @router.get("/{playlist_id}/resumen", response_model=PlaylistResumenDTO)
-def get_resumen_playlist(
-    playlist_id: int,
-    current_user = Depends(get_current_user_optional),
-    db: Session = Depends(get_db),
-):
+def get_resumen_playlist(playlist_id: int, db: Session = Depends(get_db)):
     """Retorna el resumen de la playlist con cantidad de canciones y duración total (hh:mm:ss)."""
-    return PlaylistController(db).get_resumen_playlist(playlist_id, current_user)
+    return PlaylistController(db).get_resumen_playlist(playlist_id)
 
 @router.get("", response_model=list[PlaylistResponseDTO])
 @router.get("/", response_model=list[PlaylistResponseDTO])
-def list_playlists(
-    current_user = Depends(get_current_user_optional),
-    db: Session = Depends(get_db),
-):
-    return PlaylistController(db).list_all_playlists(current_user)
+def list_playlists(db: Session = Depends(get_db)):
+    return PlaylistController(db).list_all_playlists()
 
 @router.delete("/{playlist_id}", response_model=dict[str, str | bool])
 def delete_playlist_by_id(
