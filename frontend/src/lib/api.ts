@@ -1,7 +1,9 @@
 // Cliente HTTP del backend Python (FastAPI/Flask) que corre en localhost:8000.
-// Las rutas siguen el contrato de las HUs (HU1..HU14). Sin auth por ahora.
+// Las rutas siguen el contrato de las HUs (HU1..HU14).
 //
 // Para apuntar a otro host, definir VITE_API_URL en .env.local.
+
+import { useSession } from "@/store/session";
 
 export const API_URL =
   (import.meta.env.VITE_API_URL as string | undefined) ?? "http://localhost:8000/api";
@@ -33,9 +35,15 @@ async function request<T>(
   path: string,
   opts: { body?: unknown; query?: Query } = {}
 ): Promise<T> {
+  const token = useSession.getState().token;
+  const headers: Record<string, string> = opts.body !== undefined ? { "Content-Type": "application/json" } : {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const res = await fetch(buildUrl(path, opts.query), {
     method,
-    headers: opts.body !== undefined ? { "Content-Type": "application/json" } : undefined,
+    headers,
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
   });
 

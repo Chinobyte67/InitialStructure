@@ -7,11 +7,19 @@ from src.dtos.cancion_dto import CancionResponseDTO
 from src.schemas.album_schema import CreateAlbumSchema, UpdateAlbumSchema
 from src.services.album_service import AlbumService
 from src.services.cancion_service import CancionService
+from src.middlewares.auth_middleware import get_current_user
+from src.utils.errors import ForbiddenError
 
 router = APIRouter(prefix="/albumes", tags=["albumes"])
 
+def require_admin(user = Depends(get_current_user)):
+    """Dependency que valida que el usuario sea admin."""
+    if not user.is_admin:
+        raise ForbiddenError("Solo admins pueden crear álbumes")
+    return user
+
 @router.post("/", response_model=AlbumResponseDTO)
-def create_album(payload: CreateAlbumSchema, db: Session = Depends(get_db)):
+def create_album(payload: CreateAlbumSchema, db: Session = Depends(get_db), _admin = Depends(require_admin)):
     dto = CreateAlbumDTO(**payload.model_dump())
     return AlbumService(db).create_album(dto)
 

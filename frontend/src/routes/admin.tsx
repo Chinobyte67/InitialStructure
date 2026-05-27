@@ -20,6 +20,12 @@ function AdminPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
+  // Form crear álbum
+  const [albumTitulo, setAlbumTitulo] = useState("");
+  const [albumAnio, setAlbumAnio] = useState(new Date().getFullYear());
+  const [albumArtistaId, setAlbumArtistaId] = useState<number | null>(null);
+  const [artistas, setArtistas] = useState<any[]>([]);
+
   // Gate: solo admins
   useEffect(() => {
     if (user && !user.is_admin) nav({ to: "/" });
@@ -29,12 +35,14 @@ function AdminPage() {
   const recargar = async () => {
     setLoading(true);
     try {
-      const [albs, cans] = await Promise.all([
+      const [albs, cans, arts] = await Promise.all([
         api.albumes.listar(),
         api.canciones.listarAll(),
+        api.artistas.listar(),
       ]);
       setAlbumes(albs);
       setCanciones(cans);
+      setArtistas(arts);
       if (albs.length && albumId === null) setAlbumId(albs[0].id);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Error al cargar");
@@ -58,6 +66,42 @@ function AdminPage() {
     }
   };
 
+  const handleCrearAlbum = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErr(null);
+    setMsg(null);
+
+    if (!albumTitulo.trim()) {
+      setErr("Ingresá el título del álbum");
+      return;
+    }
+
+    if (!albumArtistaId) {
+      setErr("Seleccioná un artista");
+      return;
+    }
+
+    try {
+      const nuevoAlbum = await api.albumes.crear({
+        titulo: albumTitulo.trim(),
+        anio: albumAnio,
+        artista_id: albumArtistaId,
+      });
+      setMsg(`Álbum creado: ${nuevoAlbum.titulo}. Ahora podés subir canciones.`);
+      setAlbumes([...albumes, nuevoAlbum]);
+      setAlbumId(nuevoAlbum.id); // Selecciona automáticamente el nuevo álbum
+      setAlbumTitulo("");
+      setAlbumAnio(new Date().getFullYear());
+      setAlbumArtistaId(null);
+      // Scroll a la sección de upload
+      setTimeout(() => {
+        document.getElementById("upload-section")?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Error al crear álbum");
+    }
+  };
+
   if (!user?.is_admin) return null;
 
   return (
@@ -69,6 +113,50 @@ function AdminPage() {
 
       {msg && <div className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">{msg}</div>}
       {err && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{err}</div>}
+
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold">Crear álbum nuevo</h2>
+        <form onSubmit={handleCrearAlbum} className="border rounded p-4 space-y-3">
+          <div>
+            <label className="text-sm font-medium">Título</label>
+            <input
+              type="text"
+              value={albumTitulo}
+              onChange={(e) => setAlbumTitulo(e.target.value)}
+              placeholder="Nombre del álbum"
+              className="w-full border rounded px-3 py-2 bg-background"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Año</label>
+            <input
+              type="number"
+              value={albumAnio}
+              onChange={(e) => setAlbumAnio(Number(e.target.value))}
+              className="w-full border rounded px-3 py-2 bg-background"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Artista</label>
+            <select
+              value={albumArtistaId ?? ""}
+              onChange={(e) => setAlbumArtistaId(Number(e.target.value))}
+              className="w-full border rounded px-3 py-2 bg-background"
+            >
+              <option value="">Seleccioná un artista</option>
+              {artistas.map((a) => (
+                <option key={a.id} value={a.id}>{a.nombre}</option>
+              ))}
+            </select>
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white rounded px-3 py-2 hover:bg-blue-700 transition"
+          >
+            Crear álbum
+          </button>
+        </form>
+      </section>
 
       <section className="space-y-3">
         <h2 className="text-xl font-semibold">Álbum destino</h2>
@@ -88,7 +176,7 @@ function AdminPage() {
         {albumId ? <UploadSong albumId={albumId} /> : <p className="text-sm text-muted-foreground">Elegí un álbum primero.</p>}
       </section>
 
-      <section className="space-y-3">
+      <section className="space-y-3" id="upload-section">
         <h2 className="text-xl font-semibold">Canciones ({canciones.length})</h2>
         {loading ? <p>Cargando...</p> : (
           <ul className="divide-y border rounded">
