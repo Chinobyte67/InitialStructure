@@ -218,6 +218,8 @@ export const api = {
       put<Cancion>(`/canciones/${id}`, data),
     eliminar: (id: number) => del<{ ok: true }>(`/canciones/${id}`),
     listarAll: () => get<Cancion[]>(`/canciones/all`),
+    patchDuracion: (id: number, duracion_seg: number) =>
+      request<Cancion>("PATCH", `/canciones/${id}/duracion`, { query: { duracion_seg } }),
   },
   
   // Playlists

@@ -127,6 +127,15 @@ export function PlayerBar() {
       if (Math.abs(audio.currentTime - progress) > 0.5) {
         audio.currentTime = progress;
       }
+      // Self-healing: si Cloudinary no nos dio la duración (queda en 0 en la DB),
+      // la leemos del <audio> y la persistimos en el backend para próximas reproducciones.
+      const real = Math.round(audio.duration);
+      if (cancion && Number.isFinite(audio.duration) && real > 0 && cancion.duracion_seg === 0) {
+        setCancion({ ...cancion, duracion_seg: real });
+        api.canciones.patchDuracion(cancion.id, real).catch(() => {
+          /* no bloquear reproducción si el patch falla */
+        });
+      }
     };
 
     audio.addEventListener("timeupdate", handleTimeUpdate);

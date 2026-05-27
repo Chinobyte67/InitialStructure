@@ -18,6 +18,9 @@ def upload_audio_to_cloudinary(file: BinaryIO, public_id: str | None = None) -> 
     upload_opts: dict = {
         "resource_type": "video",
         "folder": "canciones",
+        # Indispensable para que Cloudinary extraiga duración/codec del audio.
+        # Sin esto, el upload devuelve duration=None y la app no sabe cuánto dura la canción.
+        "media_metadata": True,
     }
     if public_id:
         # public_id explícito: el asset queda como "canciones/<public_id>" en Cloudinary,

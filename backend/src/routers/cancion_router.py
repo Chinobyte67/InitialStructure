@@ -72,6 +72,19 @@ def delete_cancion(cancion_id: int, db: Session = Depends(get_db)):
     CancionService(db).delete_cancion(cancion_id)
 
 
+@router.patch("/{cancion_id}/duracion", response_model=CancionResponseDTO)
+def patch_duracion(cancion_id: int, duracion_seg: int, db: Session = Depends(get_db)):
+    """Permite al frontend corregir la duración cuando Cloudinary no la extrajo.
+    El <audio> del browser lee el archivo y manda el valor real."""
+    if duracion_seg <= 0:
+        raise HTTPException(status_code=400, detail="duracion_seg debe ser > 0")
+    service = CancionService(db)
+    actual = service.get_cancion_by_id(cancion_id)
+    if not actual:
+        raise HTTPException(status_code=404, detail="Canción no encontrada")
+    return service.set_audio(cancion_id, url_audio=actual.url_audio or "", duracion_seg=duracion_seg)
+
+
 @router.get("/", response_model=list[CancionResponseDTO])
 def list_canciones_endpoint(db: Session = Depends(get_db), album_id: int | None = None):
     """Retorna todas las canciones o filtra por album_id si se provee."""
