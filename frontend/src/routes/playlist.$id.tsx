@@ -13,11 +13,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  renombrarPlaylist,
-  cambiarVisibilidad,
-  cambiarColaborativa,
-} from "@/lib/playlists.functions";
 import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/playlist/$id")({
@@ -201,8 +196,9 @@ function PlaylistPage() {
   const handleRename = async () => {
     setEditError(null);
     try {
-    const usuario_id = Number(sessionUser?.id ?? appUserId);
-    await renombrarPlaylist({ id: playlist.playlist.id, nombre: name, usuario_id });
+      const usuario_id = Number(sessionUser?.id ?? appUserId);
+      const body = { nombre: name };
+      await api.playlists.actualizar(playlist.playlist.id, body, Number.isNaN(usuario_id) ? undefined : usuario_id);
       setPlaylist((prev) =>
         prev
           ? {
@@ -241,7 +237,8 @@ function PlaylistPage() {
   const handleTogglePub = async () => {
     try {
       const usuario_id = Number(sessionUser?.id ?? appUserId);
-      await cambiarVisibilidad({ id: playlist.playlist.id, es_publica: !playlist.playlist.es_publica, usuario_id });
+      const body = { es_publica: playlist.playlist.es_publica ? 0 : 1 };
+      await api.playlists.actualizar(playlist.playlist.id, body, Number.isNaN(usuario_id) ? undefined : usuario_id);
       setPlaylist((prev) =>
         prev
           ? {
@@ -258,7 +255,8 @@ function PlaylistPage() {
   const handleToggleCol = async () => {
     try {
       const usuario_id = Number(sessionUser?.id ?? appUserId);
-      await cambiarColaborativa({ id: playlist.playlist.id, colaborativa: !playlist.playlist.colaborativa, usuario_id });
+      const body = { colaborativa: playlist.playlist.colaborativa ? 0 : 1 };
+      await api.playlists.actualizar(playlist.playlist.id, body, Number.isNaN(usuario_id) ? undefined : usuario_id);
       setPlaylist((prev) =>
         prev
           ? {
