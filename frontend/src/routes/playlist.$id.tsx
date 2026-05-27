@@ -45,8 +45,8 @@ type PlaylistDetail = {
     nombre: string;
     usuario_id: number;
     fecha_creacion: string;
-    es_publica: number | boolean;
-    colaborativa: number | boolean;
+    es_publica: boolean;
+    colaborativa: boolean;
     colaboradores?: number[];
   };
   tracks: PlaylistTrackDetail[];
@@ -106,8 +106,13 @@ async function fetchPlaylistDetail(playlistId: number): Promise<PlaylistDetail> 
 
   const total_seg = tracksWithCancion.reduce((acc, t: any) => acc + (t.canciones?.duracion_seg ?? 0), 0);
   const colaboradores = pl.colaboradores?.map(String) ?? [];
+  const playlist = {
+    ...pl,
+    es_publica: Boolean(pl.es_publica),
+    colaborativa: Boolean(pl.colaborativa),
+  };
 
-  return { playlist: pl, tracks: tracksWithCancion, total_seg, colaboradores };
+  return { playlist, tracks: tracksWithCancion, total_seg, colaboradores };
 }
 
 function formatTotal(seg: number): string {
@@ -404,7 +409,7 @@ function PlaylistPage() {
                   <Lock className="w-3 h-3" /> Privada
                 </span>
               )}
-              {playlist.playlist.colaborativa && (
+              {Boolean(playlist.playlist.colaborativa) && (
                 <span className="flex items-center gap-1">
                   <Users className="w-3 h-3" /> Colaborativa
                 </span>
@@ -461,7 +466,7 @@ function PlaylistPage() {
             </>
           )}
         </div>
-        {playlist.playlist.colaborativa && (
+        {Boolean(playlist.playlist.colaborativa) && (
           <div className="mt-6 rounded-2xl border border-border bg-background/80 p-5 shadow-sm">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
