@@ -3,6 +3,7 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/r
 import appCss from "../styles.css?url";
 import { Sidebar } from "@/components/Sidebar";
 import { PlayerBar } from "@/components/PlayerBar";
+import { QueueDrawer } from "@/components/QueueDrawer";
 
 function NotFoundComponent() {
   return (
@@ -72,6 +73,7 @@ function RootComponent() {
           <Outlet />
         </main>
       </div>
+      <QueueDrawer />
       <PlayerBar />
     </div>
   );

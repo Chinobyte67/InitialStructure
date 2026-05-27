@@ -9,9 +9,9 @@ import {
   Volume2,
   Shuffle,
   Repeat,
+  List,
 } from "lucide-react";
 import { useApp } from "@/store/app";
-import { canciones } from "@/data/catalog";
 import { api, type Album, type Artista, type Cancion } from "@/lib/api";
 import { CoverArt } from "@/components/CoverArt";
 import { cn } from "@/lib/utils";
@@ -28,20 +28,22 @@ export function PlayerBar() {
   const progress = useApp((s) => s.progress);
   const volume = useApp((s) => s.volume);
   const togglePlay = useApp((s) => s.togglePlay);
-  const play = useApp((s) => s.play);
-  const next = useApp((s) => s.next);
-  const prev = useApp((s) => s.prev);
+  const next = useApp((s) => s.nextSong);
+  const prev = useApp((s) => s.prevSong);
   const tick = useApp((s) => s.tick);
   const setVolume = useApp((s) => s.setVolume);
   const setProgress = useApp((s) => s.setProgress);
   const favoritos = useApp((s) => s.favoritos);
   const toggleFavorito = useApp((s) => s.toggleFavorito);
+  const isShuffled = useApp((s) => s.isShuffled);
+  const repeatMode = useApp((s) => s.repeatMode);
+  const toggleShuffle = useApp((s) => s.toggleShuffle);
+  const toggleRepeat = useApp((s) => s.toggleRepeat);
+  const toggleQueueOpen = useApp((s) => s.toggleQueueOpen);
 
   const [cancion, setCancion] = useState<Cancion | null>(null);
   const [album, setAlbum] = useState<Album | null>(null);
   const [artista, setArtista] = useState<Artista | null>(null);
-  const [shuffle, setShuffle] = useState(false);
-  const [repeatMode, setRepeatMode] = useState<"off" | "one" | "all">("off");
 
   // Elemento <audio> real para reproducir el archivo alojado en Cloudinary.
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -93,19 +95,28 @@ export function PlayerBar() {
     const audio = audioRef.current;
     if (!audio || !cancion?.url_audio) return;
 
+    const endHandledRef = { current: false } as { current: boolean };
+
     const handleTimeUpdate = () => {
       setProgress(audio.currentTime);
+      if (!cancion) return;
+      const expected = cancion.duracion_seg;
+      if (audio.currentTime >= expected && !endHandledRef.current) {
+        endHandledRef.current = true;
+        if (repeatMode === "one") {
+          audio.currentTime = 0;
+          audio.play().catch(() => {});
+          setProgress(0);
+        } else {
+          next();
+        }
+      }
     };
 
     const handleEnded = () => {
       if (repeatMode === "one") {
         audio.currentTime = 0;
         audio.play().catch(() => {});
-        return;
-      }
-      if (shuffle) {
-        const randomSong = canciones[Math.floor(Math.random() * canciones.length)];
-        play(randomSong.id);
         return;
       }
       next();
@@ -127,7 +138,7 @@ export function PlayerBar() {
       audio.removeEventListener("ended", handleEnded);
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
     };
-  }, [next, play, setProgress, shuffle, repeatMode, cancion?.id, cancion?.url_audio]);
+  }, [next, setProgress, isShuffled, repeatMode, cancion?.id, cancion?.url_audio]);
 
   // Sincronización del progreso cuando cambia desde controles externos (ej: slider)
   useEffect(() => {
@@ -227,10 +238,10 @@ export function PlayerBar() {
         <div className="flex flex-col items-center flex-1 max-w-2xl">
           <div className="flex items-center gap-5 mb-1.5">
           <button
-            onClick={() => setShuffle((prev) => !prev)}
+            onClick={toggleShuffle}
             className={cn(
               "transition-colors",
-              shuffle ? "text-primary" : "text-muted-foreground hover:text-foreground"
+              isShuffled ? "text-primary" : "text-muted-foreground hover:text-foreground"
             )}
             aria-label="Aleatorio"
           >
@@ -250,11 +261,14 @@ export function PlayerBar() {
             <SkipForward className="w-5 h-5" />
           </button>
           <button
-            onClick={() =>
-              setRepeatMode((mode) =>
-                mode === "off" ? "all" : mode === "all" ? "one" : "off"
-              )
-            }
+            onClick={toggleQueueOpen}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Mostrar cola"
+          >
+            <List className="w-4 h-4" />
+          </button>
+          <button
+            onClick={toggleRepeat}
             className={cn(
               "transition-colors",
               repeatMode !== "off"

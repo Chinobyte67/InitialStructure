@@ -21,7 +21,7 @@ function formatTotal(seg: number): string {
 
 function AlbumPage() {
   const { id } = Route.useParams();
-  const play = useApp((s) => s.play);
+  const playSong = useApp((s) => s.playSong);
   const [album, setAlbum] = useState<Album | null>(null);
   const [artista, setArtista] = useState<Artista | null>(null);
   const [tracks, setTracks] = useState<Cancion[]>([]);
@@ -103,7 +103,7 @@ function AlbumPage() {
 
         <div className="mt-6">
           <button
-            onClick={() => tracks[0] && play(String(tracks[0].id))}
+            onClick={() => tracks[0] && playSong(String(tracks[0].id), tracks.map((c) => String(c.id)))}
             className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-full font-semibold shadow-emboss-lg hover:scale-105 transition-transform"
           >
             <Play className="w-4 h-4 fill-current" /> Reproducir
@@ -121,6 +121,8 @@ function AlbumPage() {
               artista={artista ?? undefined}
               index={i + 1}
               showAlbum={false}
+              contextQueue={tracks.map((track) => String(track.id))}
+              onPlay={(id, queue) => playSong(id, queue)}
             />
           ))}
         </div>

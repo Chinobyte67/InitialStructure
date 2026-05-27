@@ -14,7 +14,7 @@ function ArtistaPage() {
   const { id } = Route.useParams();
   const seguidos = useApp((s) => s.seguidos);
   const toggle = useApp((s) => s.toggleSeguir);
-  const play = useApp((s) => s.play);
+  const playSong = useApp((s) => s.playSong);
   const [artista, setArtista] = useState<Artista | null>(null);
   const [albums, setAlbums] = useState<Album[]>([]);
   const [songs, setSongs] = useState<Cancion[]>([]);
@@ -89,7 +89,7 @@ function ArtistaPage() {
 
         <div className="mt-6 flex items-center gap-3">
           <button
-            onClick={() => topTracks[0] && play(String(topTracks[0].id))}
+            onClick={() => topTracks[0] && playSong(String(topTracks[0].id), topTracks.map((c) => String(c.id)))}
             className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-full font-semibold shadow-emboss-lg hover:scale-105 transition-transform"
           >
             <Play className="w-4 h-4 fill-current" /> Reproducir
@@ -120,6 +120,8 @@ function ArtistaPage() {
                 artista={artista}
                 index={i + 1}
                 showAlbum={false}
+                contextQueue={topTracks.map((track) => String(track.id))}
+                onPlay={(id, queue) => playSong(id, queue)}
               />
             ))}
           </div>

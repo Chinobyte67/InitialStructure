@@ -120,7 +120,7 @@ function PlaylistPage() {
   const appUserId = useApp((s) => s.user.id);
   const sessionUser = useSession((s) => s.user);
   const currentUserId = String(sessionUser?.id ?? appUserId);
-  const play = useApp((s) => s.play);
+  const playSong = useApp((s) => s.playSong);
   const removePlaylist = useApp((s) => s.deletePlaylist);
   const navigate = useNavigate();
 
@@ -327,7 +327,7 @@ function PlaylistPage() {
 
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <button
-            onClick={() => tracks[0] && play(tracks[0].id)}
+            onClick={() => tracks[0] && playSong(String(tracks[0].id), tracks.map((c) => String(c.id)))}
             disabled={tracks.length === 0}
             className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-full font-semibold shadow-emboss-lg hover:scale-105 transition-transform disabled:opacity-50"
           >
@@ -390,6 +390,8 @@ function PlaylistPage() {
                   genero_musical: c.albumes.artistas.genero_musical,
                 }}
                 index={i + 1}
+                contextQueue={tracks.map((track) => String(track.id))}
+                onPlay={(id, queue) => playSong(id, queue)}
                 onRemove={isOwner ? () => handleRemoveTrack(String(c.id)) : undefined}
                 showDelete={isOwner}
                 removeLabel="Quitar de la playlist"

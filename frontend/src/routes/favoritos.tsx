@@ -13,6 +13,7 @@ export const Route = createFileRoute("/favoritos")({
 function FavoritosPage() {
   const favoritos = useApp((s) => s.favoritos);
   const toggleFav = useApp((s) => s.toggleFavorito);
+  const playSong = useApp((s) => s.playSong);
   const [songs, setSongs] = useState<Cancion[]>([]);
   const [albums, setAlbums] = useState<Album[]>([]);
   const [artistas, setArtistas] = useState<Artista[]>([]);
@@ -77,6 +78,7 @@ function FavoritosPage() {
                   album={album}
                   artista={artista}
                   index={i + 1}
+                  contextQueue={items.map((track) => String(track.id))}
                   onRemove={() => toggleFav(String(c.id))}
                   removeLabel="Quitar de favoritos"
                 />

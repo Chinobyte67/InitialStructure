@@ -54,7 +54,9 @@ interface SongRowProps {
   artista?: SongRowArtista | null;
   index?: number;
   showAlbum?: boolean;
+  contextQueue?: string[];
   onRemove?: () => void;
+  onPlay?: (cancionId: string, contextQueue?: string[]) => void;
   showDelete?: boolean;
   removeLabel?: string;
 }
@@ -65,11 +67,13 @@ export function SongRow({
   artista,
   index,
   showAlbum = true,
+  contextQueue,
   onRemove,
+  onPlay,
   showDelete = true,
   removeLabel,
 }: SongRowProps) {
-  const play = useApp((s) => s.play);
+  const playSong = useApp((s) => s.playSong);
   const favoritos = useApp((s) => s.favoritos);
   const toggleFav = useApp((s) => s.toggleFavorito);
   const sessionUser = useSession((s) => s.user);
@@ -111,6 +115,15 @@ export function SongRow({
     }
   };
 
+  const handlePlay = () => {
+    const queue = contextQueue ?? [String(cancion.id)];
+    if (onPlay) {
+      onPlay(String(cancion.id), queue);
+      return;
+    }
+    playSong(String(cancion.id), queue);
+  };
+
   return (
     <div
       onMouseEnter={() => setHover(true)}
@@ -120,7 +133,7 @@ export function SongRow({
       <div className="text-sm text-muted-foreground tabular-nums flex items-center justify-center w-10">
         {hover ? (
           <button
-            onClick={() => play(String(cancion.id))}
+            onClick={handlePlay}
             className="text-foreground"
             aria-label="Reproducir"
           >

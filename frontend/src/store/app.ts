@@ -8,6 +8,21 @@ import {
   type Plan,
 } from "@/data/catalog";
 
+export type RepeatMode = "off" | "all" | "one";
+
+function shuffleArray<T>(arr: T[]): T[] {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
+
+function sanitizeQueue(queue: string[], currentSongId: string): { queue: string[]; currentIndex: number } {
+  const normalized = Array.from(new Set(queue.map(String)));
+  const currentIndex = Math.max(0, normalized.indexOf(currentSongId));
+  if (currentIndex === -1) {
+    return { queue: [currentSongId, ...normalized], currentIndex: 0 };
+  }
+  return { queue: normalized, currentIndex };
+}
+
 export interface PlaylistTrack {
   cancion_id: string;
   orden: number;
@@ -50,6 +65,12 @@ interface AppState {
 
   // Player
   currentSongId: string | null;
+  queue: string[];
+  originalQueue: string[];
+  currentIndex: number;
+  isShuffled: boolean;
+  repeatMode: RepeatMode;
+  isQueueOpen: boolean;
   isPlaying: boolean;
   progress: number; // seconds played in current track
   volume: number;
@@ -73,10 +94,17 @@ interface AppState {
   toggleFavorito: (cancionId: string) => void;
   toggleSeguir: (artistaId: string) => void;
 
+  playSong: (cancionId: string, contextQueue?: string[]) => void;
   play: (cancionId: string) => void;
   togglePlay: () => void;
   next: () => void;
   prev: () => void;
+  nextSong: () => void;
+  prevSong: () => void;
+  toggleShuffle: () => void;
+  toggleRepeat: () => void;
+  setIsQueueOpen: (open: boolean) => void;
+  toggleQueueOpen: () => void;
   tick: (delta: number) => void;
   registerPlay: (cancionId: string, segundos: number) => void;
 }
@@ -117,6 +145,12 @@ export const useApp = create<AppState>()(
       reproducciones: [],
 
       currentSongId: canciones[0].id,
+      queue: [canciones[0].id],
+      originalQueue: [],
+      currentIndex: 0,
+      isShuffled: false,
+      repeatMode: "off",
+      isQueueOpen: false,
       isPlaying: false,
       progress: 0,
       volume: 0.75,
@@ -260,16 +294,82 @@ export const useApp = create<AppState>()(
 
       setProgress: (seconds) => set(() => ({ progress: Math.max(0, seconds) })),
 
+      playSong: (cancionId, contextQueue) => {
+        // Normalize to strings to keep store consistent between mock catalog and API IDs
+        const newSongId = String(cancionId);
+        const prev = get().currentSongId;
+        const prevProg = get().progress;
+        if (prev && prev !== newSongId && prevProg > 5) {
+          get().registerPlay(prev, prevProg);
+        }
+        const baseQueue = contextQueue ? contextQueue.map(String) : get().queue;
+        const { queue, currentIndex } = sanitizeQueue(baseQueue, newSongId);
+        const finalQueue = get().isShuffled
+          ? [newSongId, ...shuffleArray(queue.filter((id) => id !== newSongId))]
+          : queue;
+        set({
+          queue: finalQueue,
+          originalQueue: get().isShuffled ? queue : [],
+          currentIndex: get().isShuffled ? 0 : currentIndex,
+          currentSongId: newSongId,
+          isPlaying: true,
+          progress: 0,
+        });
+      },
+
       play: (cancionId) => {
         const prev = get().currentSongId;
         const prevProg = get().progress;
         if (prev && prev !== cancionId && prevProg > 5) {
           get().registerPlay(prev, prevProg);
         }
-        set({ currentSongId: cancionId, isPlaying: true, progress: 0 });
+        const queue = get().queue;
+        const idx = queue.findIndex((id) => id === cancionId);
+        if (idx !== -1) {
+          set({ currentSongId: cancionId, currentIndex: idx, isPlaying: true, progress: 0 });
+          return;
+        }
+        set({ currentSongId: cancionId, queue: [cancionId], originalQueue: [], currentIndex: 0, isPlaying: true, progress: 0 });
       },
 
       togglePlay: () => set((s) => ({ isPlaying: !s.isPlaying })),
+
+      toggleShuffle: () =>
+        set((s) => {
+          if (!s.currentSongId) {
+            return { isShuffled: !s.isShuffled };
+          }
+
+          if (!s.isShuffled) {
+            const rest = s.queue.filter((id) => id !== s.currentSongId);
+            return {
+              isShuffled: true,
+              originalQueue: s.queue,
+              queue: [s.currentSongId, ...shuffleArray(rest)],
+              currentIndex: 0,
+            };
+          }
+
+          if (s.originalQueue.length > 0) {
+            const restoredIndex = Math.max(0, s.originalQueue.indexOf(s.currentSongId));
+            return {
+              isShuffled: false,
+              queue: s.originalQueue,
+              originalQueue: [],
+              currentIndex: restoredIndex >= 0 ? restoredIndex : 0,
+            };
+          }
+
+          return { isShuffled: false };
+        }),
+
+      toggleRepeat: () =>
+        set((s) => ({
+          repeatMode: s.repeatMode === "off" ? "all" : s.repeatMode === "all" ? "one" : "off",
+        })),
+
+      setIsQueueOpen: (open) => set(() => ({ isQueueOpen: open })),
+      toggleQueueOpen: () => set((s) => ({ isQueueOpen: !s.isQueueOpen })),
 
       next: () => {
         const cur = get().currentSongId;
@@ -285,6 +385,35 @@ export const useApp = create<AppState>()(
         if (idx === -1) return;
         const prevSong = canciones[(idx - 1 + canciones.length) % canciones.length];
         get().play(prevSong.id);
+      },
+
+      nextSong: () => {
+        const { queue, currentIndex, repeatMode } = get();
+        if (queue.length === 0) return;
+        if (repeatMode === "one") {
+          set({ progress: 0, isPlaying: true });
+          return;
+        }
+        const nextIndex = currentIndex + 1;
+        if (nextIndex < queue.length) {
+          set({ currentIndex: nextIndex, currentSongId: queue[nextIndex], isPlaying: true, progress: 0 });
+          return;
+        }
+        if (repeatMode === "all") {
+          set({ currentIndex: 0, currentSongId: queue[0], isPlaying: true, progress: 0 });
+        }
+      },
+
+      prevSong: () => {
+        const { queue, currentIndex, repeatMode } = get();
+        if (queue.length === 0) return;
+        if (currentIndex > 0) {
+          set({ currentIndex: currentIndex - 1, currentSongId: queue[currentIndex - 1], isPlaying: true, progress: 0 });
+          return;
+        }
+        if (repeatMode === "all") {
+          set({ currentIndex: queue.length - 1, currentSongId: queue[queue.length - 1], isPlaying: true, progress: 0 });
+        }
       },
 
       tick: (delta) => {

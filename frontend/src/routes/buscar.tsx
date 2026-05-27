@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
+import { useApp } from "@/store/app";
 import { api, Artista, Album, Cancion } from "@/lib/api";
 import { CoverArt } from "@/components/CoverArt";
 import { SongRow } from "@/components/SongRow";
@@ -27,6 +28,7 @@ const getColor = (id: number): [string, string] => {
 
 function BuscarPage() {
   const [q, setQ] = useState("");
+  const playSong = useApp((s) => s.playSong);
   const [results, setResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -132,7 +134,13 @@ function BuscarPage() {
             ) : (
               <div className="bg-card rounded-lg shadow-emboss p-2">
                 {results.canciones.map((c, i) => (
-                  <SongRow key={c.id} cancion={c} index={i + 1} />
+                  <SongRow
+                    key={c.id}
+                    cancion={c}
+                    index={i + 1}
+                    contextQueue={results.canciones.map((track) => String(track.id))}
+                    onPlay={(id, queue) => playSong(id, queue)}
+                  />
                 ))}
               </div>
             )}
