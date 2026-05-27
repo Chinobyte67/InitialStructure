@@ -40,6 +40,15 @@ def upload_audio_to_cloudinary(file: BinaryIO, public_id: str | None = None) -> 
     return secure_url, duracion_seg
 
 
+def delete_audio_asset(public_id: str) -> None:
+    """Borra un asset de audio/video de Cloudinary. No lanza si no existe."""
+    try:
+        cloudinary.uploader.destroy(public_id, resource_type="video", invalidate=True)
+    except Exception:
+        # Si ya no existe o falla la API, no bloqueamos el borrado en la DB.
+        pass
+
+
 def get_cloudinary_duration(cloudinary_url: str) -> int:
     """Obtiene la duración en segundos de un archivo de audio existente en Cloudinary."""
     try:

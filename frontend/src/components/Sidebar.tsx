@@ -11,6 +11,7 @@ import {
   CalendarHeart,
   LogIn,
   LogOut,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -130,6 +131,20 @@ export function Sidebar() {
             </Link>
           );
         })}
+        {sessionUser?.is_admin && (
+          <Link
+            to="/admin"
+            className={cn(
+              "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
+              pathname === "/admin"
+                ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-deboss"
+                : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+            )}
+          >
+            <Settings className="w-4 h-4" />
+            Admin
+          </Link>
+        )}
       </nav>
 
       <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-4 scrollbar-thin scrollbar-thumb-sidebar-border scrollbar-track-sidebar-bg">

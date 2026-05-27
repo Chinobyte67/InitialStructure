@@ -8,7 +8,7 @@ from ..repositories.cancion_repository import CancionRepository
 from ..db.models.reproduccion_model import Reproduccion
 from ..db.models.cancion_model import Cancion
 from ..utils.errors import NotFoundError
-from ..utils.cloudinary import get_cloudinary_duration
+from ..utils.cloudinary import get_cloudinary_duration, delete_audio_asset
 
 class CancionService:
     def __init__(self, db: Session):
@@ -102,6 +102,33 @@ class CancionService:
     def update_cancion(self, cancion_id: int, cancion_dto: CreateCancionDTO) -> CancionResponseDTO | None:
         return self.cancion_repo.update(cancion_id, cancion_dto)
 
-    def delete_cancion(self, cancion_id: int) -> bool:
+    def delete_cancion(self, cancion_id: int, borrar_de_cloudinary: bool = True) -> bool:
+        # Si la canción tiene un asset en Cloudinary subido por nosotros, lo borramos también.
+        if borrar_de_cloudinary:
+            actual = self.cancion_repo.find_by_id(cancion_id)
+            if actual and actual.url_audio:
+                public_id = _public_id_from_url(actual.url_audio)
+                if public_id:
+                    delete_audio_asset(public_id)
         return self.cancion_repo.delete(cancion_id)
+
+def _public_id_from_url(url: str) -> str | None:
+    """Extrae el public_id (incluyendo carpeta) de una URL de Cloudinary.
+    Ej: .../upload/v123/canciones/cancion_42.mp3 → 'canciones/cancion_42'."""
+    from urllib.parse import urlparse
+    try:
+        parts = urlparse(url).path.split("/")
+        if "upload" not in parts:
+            return None
+        idx = parts.index("upload")
+        # saltar version (vNNN) si está
+        rest = parts[idx + 1:]
+        if rest and rest[0].startswith("v") and rest[0][1:].isdigit():
+            rest = rest[1:]
+        if not rest:
+            return None
+        joined = "/".join(rest)
+        return joined.rsplit(".", 1)[0]
+    except Exception:
+        return None
     
