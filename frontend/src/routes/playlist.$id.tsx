@@ -201,8 +201,8 @@ function PlaylistPage() {
   const handleRename = async () => {
     setEditError(null);
     try {
-      const usuario_id = Number(sessionUser?.id ?? appUserId);
-      await renombrarPlaylist({ id: playlist.playlist.id, nombre: name, usuario_id });
+    const usuario_id = Number(sessionUser?.id ?? appUserId);
+    await renombrarPlaylist({ id: playlist.playlist.id, nombre: name, usuario_id });
       setPlaylist((prev) =>
         prev
           ? {
@@ -240,7 +240,8 @@ function PlaylistPage() {
 
   const handleTogglePub = async () => {
     try {
-      await cambiarVisibilidad({ id: playlist.playlist.id, es_publica: !playlist.playlist.es_publica });
+      const usuario_id = Number(sessionUser?.id ?? appUserId);
+      await cambiarVisibilidad({ id: playlist.playlist.id, es_publica: !playlist.playlist.es_publica, usuario_id });
       setPlaylist((prev) =>
         prev
           ? {
@@ -256,7 +257,8 @@ function PlaylistPage() {
 
   const handleToggleCol = async () => {
     try {
-      await cambiarColaborativa({ id: playlist.playlist.id, colaborativa: !playlist.playlist.colaborativa });
+      const usuario_id = Number(sessionUser?.id ?? appUserId);
+      await cambiarColaborativa({ id: playlist.playlist.id, colaborativa: !playlist.playlist.colaborativa, usuario_id });
       setPlaylist((prev) =>
         prev
           ? {
