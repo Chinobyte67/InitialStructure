@@ -28,3 +28,24 @@ def get_current_user(
         raise UnauthorizedError("User no longer exists")
 
     return to_user_response(user)
+
+
+def get_current_user_optional(
+    authorization: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+) -> UserResponseDTO | None:
+    if not authorization or not authorization.lower().startswith("bearer "):
+        return None
+
+    token = authorization.split(" ", 1)[1].strip()
+    payload = decode_token(token)
+
+    user_id = payload.get("sub")
+    if user_id is None:
+        raise UnauthorizedError("Invalid token payload")
+
+    user = UserRepository(db).find_by_id(int(user_id))
+    if user is None:
+        raise UnauthorizedError("User no longer exists")
+
+    return to_user_response(user)

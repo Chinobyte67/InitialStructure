@@ -36,8 +36,20 @@ class PlaylistCancionesService:
     def list_all_playlist_canciones(self) -> list[PlaylistCancionesResponseDTO]:
         return self.playlist_canciones_repo.list_all()
 
-    def list_playlist_canciones_by_playlist_id(self, playlist_id: int) -> list[PlaylistCancionesResponseDTO]:
+    def list_playlist_canciones_by_playlist_id(self, playlist_id: int, current_user = None) -> list[PlaylistCancionesResponseDTO]:
+        playlist = self.playlist_repository.find_by_id(playlist_id)
+        if not playlist:
+            raise NotFoundError("Playlist not found")
+
+        if playlist.es_publica != 1 and not self._can_view_private(playlist, current_user):
+            raise NotFoundError("Playlist not found")
+
         return self.playlist_canciones_repo.list_by_playlist(playlist_id)
+
+    def _can_view_private(self, playlist, current_user) -> bool:
+        if current_user is None:
+            return False
+        return current_user.id == playlist.usuario_id or current_user.is_admin
 
     def delete_playlist_canciones(self, playlist_canciones_id: int, usuario_id: int) -> bool:
         playlist_canciones = self.playlist_canciones_repo.find_by_id(playlist_canciones_id)

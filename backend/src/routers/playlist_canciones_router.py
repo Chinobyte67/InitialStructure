@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from src.db.connection import get_db
 from src.dtos.playlist_canciones_dto import CreatePlaylistCancionesDTO, UpdatePlaylistCancionesDTO, PlaylistCancionesResponseDTO
+from src.middlewares.auth_middleware import get_current_user_optional
 from src.schemas.playlist_canciones_schema import CreatePlaylistCancionesSchema, UpdatePlaylistCancionesSchema
 from src.services.playlist_canciones_service import PlaylistCancionesService
 
@@ -22,8 +23,12 @@ def list_all_playlist_canciones(db: Session = Depends(get_db)):
     return PlaylistCancionesService(db).list_all_playlist_canciones()
 
 @router.get("/playlist/{playlist_id}", response_model=list[PlaylistCancionesResponseDTO])
-def get_playlist_canciones_by_playlist(playlist_id: int, db: Session = Depends(get_db)):
-    return PlaylistCancionesService(db).list_playlist_canciones_by_playlist_id(playlist_id)
+def get_playlist_canciones_by_playlist(
+    playlist_id: int,
+    current_user = Depends(get_current_user_optional),
+    db: Session = Depends(get_db),
+):
+    return PlaylistCancionesService(db).list_playlist_canciones_by_playlist_id(playlist_id, current_user)
 
 @router.delete("/{playlist_canciones_id}")
 def delete_playlist_canciones(

@@ -15,14 +15,23 @@ class PlaylistController:
     def create_playlist(self, playlist_dto: CreatePlaylistDTO) -> PlaylistResponseDTO:
         return self.playlist_repository.create(playlist_dto)
 
-    def get_playlist_by_id(self, playlist_id: int) -> PlaylistResponseDTO:
+    def get_playlist_by_id(self, playlist_id: int, current_user = None) -> PlaylistResponseDTO:
         playlist = self.playlist_repository.find_by_id(playlist_id)
         if not playlist:
             raise NotFoundError("Playlist not found")
+
+        if playlist.es_publica != 1 and not self._can_view_private(playlist, current_user):
+            raise NotFoundError("Playlist not found")
+
         return playlist
 
-    def list_all_playlists(self) -> list[PlaylistResponseDTO]:
-        return self.playlist_repository.list_all()
+    def list_all_playlists(self, current_user = None) -> list[PlaylistResponseDTO]:
+        return self.playlist_repository.list_all(current_user)
+
+    def _can_view_private(self, playlist: PlaylistResponseDTO, current_user) -> bool:
+        if current_user is None:
+            return False
+        return current_user.id == playlist.usuario_id or current_user.is_admin
 
     def delete_playlist(self, playlist_id: int, usuario_id: int) -> bool:
         return self.playlist_repository.delete(playlist_id, usuario_id)
@@ -30,7 +39,7 @@ class PlaylistController:
     def update_playlist(self, playlist_id: int, playlist_dto: CreatePlaylistDTO) -> PlaylistResponseDTO | None:
         return self.playlist_repository.update(playlist_id, playlist_dto)
 
-    def get_resumen_playlist(self, playlist_id: int) -> PlaylistResumenDTO:
+    def get_resumen_playlist(self, playlist_id: int, current_user = None) -> PlaylistResumenDTO:
         """
         Retorna el resumen de la playlist con cantidad de canciones y duración total.
         Duración formateada como hh:mm:ss.
@@ -38,6 +47,9 @@ class PlaylistController:
         # Verificar que la playlist existe
         playlist = self.playlist_repository.find_by_id(playlist_id)
         if not playlist:
+            raise NotFoundError("Playlist not found")
+
+        if playlist.es_publica != 1 and not self._can_view_private(playlist, current_user):
             raise NotFoundError("Playlist not found")
         
         # Query: contar canciones y sumar duración

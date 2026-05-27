@@ -7,6 +7,7 @@ from ..db.models.playlist_colaborador_model import PlaylistColaborador
 from ..db.models.usuario_model import User
 from ..dtos.playlist_dto import CreatePlaylistDTO, PlaylistResponseDTO
 from ..mappers.playlist_mapper import to_playlist_response
+from sqlalchemy import or_
 from ..repositories.playlist_canciones_repository import PlaylistCancionesRepository
 from ..repositories.playlist_colaboradores_repository import PlaylistColaboradoresRepository
 from ..repositories.user_repository import UserRepository
@@ -119,8 +120,16 @@ class PlaylistRepository:
         self.db.commit()
         return True
 
-    def list_all(self) -> list[PlaylistResponseDTO]:
-        playlists = self.db.query(Playlist).all()
+    def list_all(self, current_user = None) -> list[PlaylistResponseDTO]:
+        query = self.db.query(Playlist)
+        if current_user is None:
+            query = query.filter(Playlist.es_publica == 1)
+        elif not current_user.is_admin:
+            query = query.filter(
+                or_(Playlist.es_publica == 1, Playlist.usuario_id == current_user.id)
+            )
+
+        playlists = query.all()
         return [
             to_playlist_response(playlist, self.playlist_colaboradores_repository.list_collaborators(playlist.id))
             for playlist in playlists
