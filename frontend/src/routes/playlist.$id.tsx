@@ -184,7 +184,15 @@ function PlaylistPage() {
 
   const playlistOwnerId = String(playlist.playlist.usuario_id ?? (playlist.playlist as any).user_id ?? "");
   const isOwner = String(sessionUser?.id) === playlistOwnerId || String(appUserId) === playlistOwnerId;
-  console.log("Sesión ID:", sessionUser?.id, "Playlist Dueño ID:", playlistOwnerId, "Es dueño:", isOwner);
+  const isAdmin = sessionUser?.is_admin ?? false;
+  const canDelete = isOwner || isAdmin;
+  console.log(
+    "Sesión ID:", sessionUser?.id,
+    "Playlist Dueño ID:", playlistOwnerId,
+    "Es dueño:", isOwner,
+    "Es admin:", isAdmin,
+    "Puede borrar:", canDelete
+  );
   const firstAlbum = tracks[0]?.albumes;
   const colors = firstAlbum
     ? (["oklch(0.40 0.15 280)", "oklch(0.20 0.05 280)"] as [string, string])
@@ -325,7 +333,7 @@ function PlaylistPage() {
           >
             <Play className="w-4 h-4 fill-current" /> Reproducir
           </button>
-          {isOwner && (
+          {canDelete && (
             <button
               onClick={handleDelete}
               className="flex items-center gap-2 px-4 py-2 rounded-full text-sm text-destructive border border-destructive/20 hover:bg-destructive/10"

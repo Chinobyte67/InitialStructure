@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from ..db.models.playlist_model import Playlist
 from ..db.models.playlist_canciones_model import PlaylistCanciones
 from ..db.models.playlist_colaborador_model import PlaylistColaborador
+from ..db.models.usuario_model import User
 from ..dtos.playlist_dto import CreatePlaylistDTO, PlaylistResponseDTO
 from ..mappers.playlist_mapper import to_playlist_response
 from ..repositories.playlist_canciones_repository import PlaylistCancionesRepository
@@ -90,7 +91,26 @@ class PlaylistRepository:
         playlist = self.db.query(Playlist).filter(Playlist.id == playlist_id).first()
         if not playlist:
             return False
-        if playlist.usuario_id != usuario_id:
+        
+        # Verificar si el usuario es admin
+        user = self.db.query(User).filter(User.id == usuario_id).first()
+        is_admin = user and user.is_admin
+        
+        print(f"\n=== DELETE PLAYLIST DEBUG ===")
+        print(f"Playlist ID: {playlist_id}")
+        print(f"Playlist Owner: {playlist.usuario_id}")
+        print(f"User ID requesting delete: {usuario_id}")
+        print(f"User found: {user is not None}")
+        if user:
+            print(f"User email: {user.email}")
+            print(f"User is_admin: {user.is_admin}")
+        print(f"is_admin flag: {is_admin}")
+        print(f"usuario_id == playlist.usuario_id: {usuario_id == playlist.usuario_id}")
+        print(f"Allow delete: {usuario_id == playlist.usuario_id or is_admin}")
+        print(f"=== END DEBUG ===\n")
+        
+        # Permitir eliminar si es el dueño O si es admin
+        if playlist.usuario_id != usuario_id and not is_admin:
             raise ForbiddenError("Solo el dueño de la playlist puede eliminarla")
 
         self.db.query(PlaylistCanciones).filter(PlaylistCanciones.playlist_id == playlist_id).delete(synchronize_session=False)
