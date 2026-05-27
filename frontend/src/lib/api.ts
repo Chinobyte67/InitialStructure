@@ -41,11 +41,17 @@ async function request<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(buildUrl(path, opts.query), {
-    method,
-    headers,
-    body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
-  });
+  let res: Response;
+  try {
+    res = await fetch(buildUrl(path, opts.query), {
+      method,
+      headers,
+      body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+    });
+  } catch (e: any) {
+    const msg = e?.message ?? "Error de red al conectar con la API";
+    throw new ApiError(0, `No se pudo conectar al servidor API: ${msg}`, null);
+  }
 
   let parsed: unknown = null;
   const text = await res.text();
